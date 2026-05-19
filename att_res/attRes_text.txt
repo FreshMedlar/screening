@@ -1,0 +1,851 @@
+Reservoir Computing as a Language Model
+Felix Köster and Atsushi Uchida
+Department of Information and Computer Sciences, Saitama University,
+255 Shimo-Okubo, Sakura-ku, Saitama City, Saitama, 338-8570, Japan ∗
+
+arXiv:2507.15779v1 [cs.CL] 21 Jul 2025
+
+(Dated: July 22, 2025)
+Large Language Models (LLM) have dominated the science and media landscape duo to their
+impressive performance on processing large chunks of data and produce human-like levels of text.
+Nevertheless, their huge energy demand and slow processing still a bottleneck for further increasing
+quality while also making the models accessible to everyone. To solve this bottleneck, we will
+investigate how reservoir computing performs on natural text processing, which could enable fast and
+energy efficient hardware implementations. Studies investigating the use of reservoir computing as
+a language model remain sparse. In this paper, we compare three distinct approaches for characterlevel language modeling, two different reservoir computing approaches, where only an output layer is
+trainable, and the well-known transformer -based architectures, which fully learn an attention-based
+sequence representation. We explore the performance, computational cost and prediction accuracy
+for both paradigms by equally varying the number of trainable parameters for all models. Using a
+consistent pipeline for all three approaches, we demonstrate that transformers excel in prediction
+quality, whereas reservoir computers remain highly efficient reducing the training and inference
+speed. Furthermore, we investigate two types of reservoir computing: a traditional reservoir with
+a static linear readout, and an attention-enhanced reservoir that dynamically adapts its output
+weights via an attention mechanism. Our findings underline how these paradigms scale and offer
+guidelines to balance resource constraints with performance.
+
+I.
+
+INTRODUCTION
+
+Modern sequence modeling tasks, such as language
+modeling and machine translation, have been dominated
+by attention-based architectures-most prominently the
+transformer family [1–6]- which excel at capturing longrange dependencies by learning contextual representations through self-attention layers and feed-forward networks. However, transformer training and inference incur
+substantial computational and energy costs, often requiring specialized hardware and limiting accessibility with
+tighter resource budgets.
+Reservoir computing (RC) offers an alternative. In RC,
+a large, fixed, recurrent “reservoir” projects inputs into
+a high-dimensional state space, and only a lightweight
+readout layer is trained. This design dramatically reduces training time and energy consumption and can be
+implemented efficiently in software or on analog hardware substrates. Recent work has extended classical RC
+with neural programming techniques to shape reservoir
+dynamics and introduced attention mechanisms at the
+readout stage to adaptively weight reservoir states [7].
+RC has been shown to excel in time-series prediction [8–
+10], capitalizing on the mentioned large, fixed random
+reservoir for capturing nonlinear dynamics with minimal training overhead [11–14]. The charm of reservoir
+computing lies in its versatile implementation via a wide
+range of physical substrates [15], including quantum systems as potential RC candidates [16–18].
+Recently, more expressive control over reservoir behavior has been introduced via neural programming
+
+∗ felixk@mail.saitama-u.ac.jp, auchida@mail.saitama-u.ac.jp
+
+paradigms, further expanding their utility in symbolic
+computation and structured sequence modeling [19].
+While prior work has explored the use of reservoir computing for text classification tasks [20] and even demonstrated hardware-oriented implementations for language
+learning [21], the use of reservoir computing explicitly as
+a language model—i.e., for generative next-token prediction—remains largely unexplored. Reservoir computing
+has an advantage of simplicity, since only a small readout
+layer must be trained, while transformers require endto-end training of embeddings, multi-head self-attention
+layers, and feed-forward networks. However, transformers can achieve state-of-the-art performance in language
+tasks by scaling to millions (or billions) of parameters [4].
+
+In this study, we present a unified framework, applying
+both approaches to character-level sequence prediction
+on a small corpus of Shakespeare text inspired by recent
+minimalist transformer implementations such as Karpathy’s NanoGPT [22], which demonstrate how compact
+models can still achieve strong performance on characterlevel language modeling tasks. We vary reservoir size in
+the classic RC for a linear readout and RC size and attention layer size for an attention-enhanced readout [7],
+while varying hidden dimension and number of layers in
+transformers, obtaining multiple configurations spanning
+from thousands up to hundred thousand of trainable parameters. By measuring cross-entropy loss across these
+diverse setups, we expose fundamental trade-offs in resource usage and generalization performance.
+
+2
+Input Text
+s
+
+a
+
+h
+
+Cross Entropy – Prediction
+X
+H(y, ŷ) = −
+yi log ŷi
+
+k
+
+i
+
+Output Layer
+Vector Embedding
+
+0.2
+ . 
+ .. 
+0.8
+
+
+
+
+
+
+0.3
+ . 
+ .. 
+0.9
+
+ 
+0.5
+ . 
+ .. 
+0.6
+
+
+w1
+ w2 
+
+
+ .. 
+ . 
+wm
+
+
+ 
+0.7
+ . 
+ .. 
+0.1
+
+Reservoir
+Att-Enhanced Reservoir
+Transformer
+
+
+
+
+pa = 0.1
+pb = 0.01
+
+
+pc = 0.12
+
+
+..
+.
+
+Time
+
+FIG. 1: Diagram illustrating the reservoir computing model with vector embedding, reservoir processing
+(Att-Enhanced Reservoir, Transformer), output layer, and predicted probability vector for the next letter. The
+vector embedding is trained for the transformer case, while being randomly initialized for the reservoirs.
+The
+P
+predicted probabilities (e.g., pA for letter a) are used to compute the cross entropy loss H(y, ŷ) = − i yi log ŷi ,
+which drives the error feedback.
+
+II.
+
+TASK FORMULATION AND DATASET
+
+We tackle a character-level next-character prediction
+task. Let X = {x1 , . . . , xT } represent a fixed-length input sequence of characters, and let yT +1 be the next character to predict. We treat the problem as a multi-class
+classification over the vocabulary V = 59. The dataset
+is a 9-million-character corpus of Shakespeare text inspired by recent minimalist transformer implementations
+such as Karpathy’s NanoGPT [22], which we split into 6
+shards: 5 shards for training and 1 shard for testing.
+Each shard is processed at the character level, forming
+sequences of length 32 for the input, plus the next character as the target. Before training the text corpus is preprocessed by lowercasing all letters to achieve a smaller
+vocabulary V = 59. Training optimizes a standard crossentropy loss over the predicted logits versus the correct
+next character. We track training and test losses per
+shard and epoch.
+
+III.
+
+BACKGROUND AND MODEL
+ARCHITECTURES
+
+A.
+
+Traditional Reservoir Computing
+
+The echo state implementation of a classic reservoir
+computer consists of three main components: an inputto-reservoir weight matrix Win ∈ RN ×d , a fixed recurrent reservoir matrix Wres ∈ RN ×N , and a readout layer
+Wout ∈ RV×N [11]. Here d is the dimension of the chosen input-embedding vector for the input letter, N the
+number of nodes in the reservoir, and V the size of the vocabulary. The reservoir evolves its hidden states rt ∈ RN
+
+as
+rt = tanh(rt−1 Wres + xt Win ).
+Here, xt ∈ Rd is an embedding vector of the current input
+character. In the simplest (traditional ) reservoir setting,
+only the readout layer Wout is trained:
+ȳt = rt Wout .
+where rt is the reservoir state at time t. Typically,
+Wout is learned using ridge regression, which minimizes
+the mean squared error with an added ℓ2 regularization
+term to prevent overfitting and improve generalization.
+However, in our experiments, we employ a cross-entropy
+loss function, necessitating gradient-based optimization
+methods for training Wout . Moreover, ridge regression
+can become computationally intensive as the number of
+training samples and reservoir size increase, due to the inversion of large matrices. By using gradient-based methods, we circumvent these scalability issues.
+
+B.
+
+Attention-Enhanced Reservoir Computing
+
+Incorporating an attention mechanism into a RC can
+significantly improve its performance by making the output weights adaptable to the reservoir states, although
+increasing the number of trainable weights relative to the
+reservoir size [7]. Instead of using fixed output weights
+as in traditional RC, the attention-enhanced reservoir
+computing (AERC) uses dynamically computed attention weights that vary with inputs.
+For each data point l fed into the reservoir, the corresponding attention weights Watt,l ∈ RHo ×N are calculated. These attention weights are derived using a small
+
+3
+TABLE I: Trainable Parameter Counts for the classic reservoir, AERC, and Transformer Architectures
+Approach
+
+Configuration
+Parameters
+Hidden Size dh = 64, Heads h = 4, Layers L = 4
+15067
+Hidden Size dh = 72, Heads h = 8, Layers L = 8
+30299
+Transformer Hidden Size dh = 128, Heads h = 8, Layers L = 8
+45083
+Hidden Size dh = 356, Heads h = 8, Layers L = 8
+105275
+Hidden Size dh = 256, Heads h = 16, Layers L = 16
+155803
+Reservoir Size N = 250
+14809
+Reservoir Size N = 500
+29559
+Reservoir
+Reservoir Size N = 750
+44309
+Reservoir Size N = 1750
+103309
+Reservoir Size N = 2600
+153459
+Reservoir Size N = 75, Hidden Size H = 13
+15464
+Reservoir Size N = 75, Hidden Size H = 19
+31124
+Att Reservoir Reservoir Size N = 100, Hidden Size H = 20
+45259
+Reservoir Size N = 150, Hidden Size H = 25
+102809
+Reservoir Size N = 160, Hidden Size H = 30
+155459
+
+neural network F with trainable parameters Wnet , based
+on the reservoir states rl :
+Watt,l = F (Wnet , rl ).
+The weights are used to project the reservoir state onto
+a small hidden state rol ∈ RHo :
+rol = Watt,l rl .
+This intermediate output vector is then mapped onto
+the final logits of dimensions V via a final linear matrix
+Wout ∈ RV×Ho :
+ȳl = Wout rol .
+This choice of architecture with an intermediate layer is
+done to reduce the number of parameters, resulting from
+the 3-d tensor that maps from the attention layer in the
+F (Wnet , rl ) to the attention weights Wnet mapping from
+a vector to a matrix.
+Our goal is to refine Wnet so that the AERC can effectively model complex temporal dependencies in the
+input data. In this work, the neural network component
+consists of a single hidden layer with a ReLU activation
+function. After the training phase, the attention mechanism computes new attention weights at each time step.
+These dynamically updated attention weights allow the
+system to adapt to the evolving input, improving performance in complex dynamical systems.
+
+C.
+
+Transformer Architectures
+
+Transformers [1] are fully trainable neural networks
+that have achieve state-of-the-art performance on many
+sequence modeling tasks. The input sequence of characters is mapped to embeddings of dimension d. A stack
+of L layers follows, each containing a multi-head selfattention block and a feed-forward sub-block. Attention
+
+heads learn to focus on relevant parts of the input sequence at different positions. The feed-forward layers,
+typically parameterized by matrices of dimension on the
+order of d × αd (where α is a constant expansion factor),
+refine the representation. The complexity of the transformer grows with L (the number of layers) and d (the
+embedding dimension). The output is passed through a
+final projection to logits of size V, the vocabulary dimension. All parameters (including embedding, attention,
+feed-forward, and output projection) are learned end-toend, giving transformers a large capacity to capture longrange dependencies. However, this capacity often comes
+at a significant computational and memory cost, particularly for large L, d and long sequences.
+
+IV.
+
+ARCHITECTURES
+
+The number of trainable parameters depends strongly
+on the chosen architecture and hyperparameters. We focused on choosing hyperparameters, such that the number of trainable parameters is comparable between all
+3 different models. Table I summarizes the number of
+trainable parameters for each architecture across different configurations. With a vocabulary size of V = 59
+characters due to the Shakespeare dataset used in our
+experiments we arrive at architectures that range from
+around 15000 trainable parameters to around 150000.
+For all three models, we take an embedding dimension of
+d = 16. For the Transformer model we vary the hidden
+size dh , the number of heads h, and the number of layers
+L. For the classic reservoir and AERC configurations, we
+vary the reservoir size N , the hidden dimensions of the
+attention layer H, and set the final layer Ho = H to be
+equal to the attention layers hidden dimension.
+
+4
+
+Transformer
+
+Reservoir
+
+AERC
+
+to be, or not clear
+born have the poor
+my turn with my soul.
+romeo what when queen
+let this shall let the
+sbatter did the death,
+well the part, that your
+grief is turned, we hard
+me, like on an i when a
+true, and her-promain
+the commone to with
+you this lodged prithee
+
+to be, or not as a find.
+hele to where i wheress
+thieve hot may come,
+and you the sease, thy
+agains for your gon.
+pring thy worney that
+light and he winder,
+eyes was from three
+like io be good reator,
+but have them beenes
+of be strengler. i have
+such a foglingers widdly, good time i, btund.
+
+to be, or not my
+could now richment.
+lodovico-ling, as yield
+make one in their if
+younger, farewell.
+duchall, then, my great,
+teater these is and
+that beauty brow man,
+for here is the lord of
+play birthing on the
+had your and, but
+i’ll gench i heart that
+this mans colors well
+
+FIG. 2: Comparison of language models: Transformer, Reservoir, and AERC with around 155k parameters (biggest
+model in Table I) run in auto-regressive mode with the initial seed ”to be, or not” showing the generated text.
+
+V.
+
+TRAINING
+
+We train the parameters of all three architectures to
+predict the next character in a sequence by minimizing
+the cross-entropy loss:
+(s+1)
+
+Wnet
+
+
+(s)
+(s)
+= Wnet − γ∇F Wnet , R/X ,
+
+(1)
+
+where s indexes the training batches, γ is the learning
+rate, and in the two reservoir computer cases R denotes
+the reservoir states and in the Transformer case X the
+input sentence embedding. One batch corresponds to a
+subset of the training data used in each update step. The
+cross-entropy loss is defined as
+H(y, ŷ) = −
+
+V
+X
+
+yi log ŷi
+
+(2)
+
+i
+
+where V is the number of output classes, ŷi are the output logits, and yi is the true one-hot encoded label. We
+apply the softmax function to obtain output probabilities
+and compute the cross-entropy loss accordingly, a standard formulation in classification tasks [23]. All trainable weights are updated using backpropagation [24] and
+optimized using the Adam optimizer, a widely adopted
+variant of stochastic gradient descent [25].
+
+VI.
+
+attention-enhanced reservoir, and the transformer models are trained entirely by backpropagation in a consistent framework. We measure cross-entropy on the test
+shard as our main performance metric. We also assess
+closed-loop generation by feeding the predicted character back as input, measuring distributional metrics and
+repetitive patterns. Our parameter sweep includes varying the reservoir size or the neural network size in the attention reservoir, as well as varying the hidden dimension
+d and number of layers and heads L in the transformer.
+To save compute power, we first compute all the reservoir
+responses in one shard and keep them in memory, after
+which a few epochs on this shard are run before the next
+shard is processed. This procedure is repeated multiple
+times for all shards.
+
+METHODOLOGY
+
+We divide the Shakespeare corpus into 6 shards. Five
+shards serve as training data, and one shard is used for
+testing. We sample sequences of length 32, i.e. 32 characters as input, and train on a batch size of 1024 with Adam
+at a learning rate 1 × 10−4 . The traditional reservoir, the
+
+VII.
+
+RESULTS
+
+We now present the performance of the trained models and analyze the training process. Figure 2 shows a
+representative example of text generated by each of the
+three models, all configured with approximately 155,000
+trainable parameters—corresponding to the largest models listed in Table I. While the generated text mimics the
+style of the Shakespearean corpus, the limited model capacity and small vocabulary size lead to inconsistencies
+and occasional errors. Nonetheless, the examples demonstrate that all three models successfully learn characterlevel prediction distributions that capture essential patterns in the dataset.
+To quantitatively assess model performance, we report
+training and testing losses across epochs and data shards
+for all five model sizes described in Table I. The results
+are visualized in Figure 3. Figure 3 presents training (top
+
+5
+
+Transformer Training
+
+Train Loss
+
+3.0
+2.5
+
+Att Training
+
+Parameter:14809
+Parameter:29559
+Parameter:44309
+Parameter:103309
+Parameter:153459
+
+Parameter:15464
+Parameter:31124
+Parameter:45259
+Parameter:102809
+Parameter:150659
+
+2.0
+1.5
+
+Test Loss
+
+Reservoir Training
+
+Parameter:15067
+Parameter:30299
+Parameter:45083
+Parameter:105275
+Parameter:155803
+
+100
+
+2.8
+2.6
+2.4
+2.2
+2.0
+1.8
+1.6 100
+
+101
+102
+Accumulated Shard Epochs
+Transformer Testing
+
+100
+
+101
+102
+Accumulated Shard Epochs
+Reservoir Testing
+
+100
+
+101
+102
+Accumulated Shard Epochs
+Att Testing
+
+101
+102
+Accumulated Shard Epochs
+
+100
+
+101
+102
+Accumulated Shard Epochs
+
+100
+
+101
+102
+Accumulated Shard Epochs
+
+FIG. 3: Training and testing loss over accumulated number of shared epochs for the Transformer, Reservoir, and
+Attention-Enhanced Reservoir Computer for the 5 different complexity models of Table I. The thin light-grey
+dashed vertical lines indicate a shard change, while the black dashed lines show one complete epoch of all shards.
+Every shard was run for 5 shard epochs until the next one was processed.
+
+row) and testing (bottom row) losses for the five model
+sizes listed in Table I, ordered from smallest (turquoise)
+to largest (grey). Model sizes range from approximately
+15,000 to 155,000 trainable parameters.
+Training is performed in shards: for each shard, reservoir responses are precomputed and stored in memory.
+Multiple training epochs are then performed on each
+shard before proceeding to the next. This approach
+mimics the inherent speed of reservoir computing, which
+theoretically operates with near-instantaneous dynamics.
+Vertical light-gray dashed lines mark shard transitions,
+while thicker dark-gray dashed lines denote full passes
+over the dataset (epochs). Due to this sharding structure,
+we observe periodic spikes in both training and testing
+losses—particularly in training—caused by model finetuning on individual shards. While increased stochasticity might reduce overfitting and improve convergence
+by avoiding poor local minima, our configuration of six
+shards and five epochs per shard balances computational
+efficiency and generalization. This setup tries to maximize the benefits of precomputing reservoir states while
+mitigating overfitting through moderate stochasticity.
+Analyzing the loss curves for the Transformer, the
+classical Reservoir Computer (RC), and the AttentionEnhanced Reservoir Computer (AERC), we observe that
+loss variance across different model sizes is more pronounced in the RC and AERC than in the Transformer.
+As expected, the Transformer achieves the best overall
+
+performance, with a minimum test loss of 1.67 for the
+largest configuration. However, we note that the classical RC achieves a test loss as low as 2.01, and the AERC
+reaches an intermediate value of 1.73—indicating that
+both RC-based models are competitive despite their relative simplicity.
+Finally, the Transformer exhibits the smallest training–testing loss gap, reflecting better generalization and
+reduced overfitting. In contrast, both reservoir-based
+models show a greater tendency to overfit, likely due to
+the fixed nature of their reservoirs and the limited capacity of their readout layers.
+An important direction for further research is to investigate scaling laws for reservoir computing in the context
+of large language model (LLM) prediction. These results
+would be consistent with known scaling laws of transformer architectures, where performance improves predictability with increased model size and dataset scale
+[26]. Understanding how performance scales with reservoir size and model capacity could offer valuable insights
+into the potential of RC-based architectures in more complex sequence modeling tasks. As computational resources improve, we plan to explore the behavior of both
+classical and attention-enhanced reservoir computers at
+larger scales, assessing their viability as alternatives to
+conventional deep learning models.
+
+6
+Evaluation Metrics and Analysis
+
+Next we investigate the long-term text similarity performance of the three architectures for auto-regressive
+generation. To assess the performance of the different
+model architectures in generating longer text, we employ
+the N-gram overlap to quantify performance beyond the
+loss of cross entropy. This metric quantifies the aspect of
+similarity to the reference data and distributional alignment and is inspired by classical N-gram-based evaluation metrics such as BLEU [27], which assess the proportion of overlapping sequences between generated and
+reference text. The following subsection details the metric.
+
+1.
+
+N -gram Overlap measures the similarity between
+the generated text and a reference text by computing
+the fraction of unique n-grams in the generated text that
+also appear in the reference text.
+|{n ∈ Gn ∩ Rn }|
+,
+|Gn |
+
+(3)
+
+where Gn is the set of unique n-grams in the generated
+text, and Rn is the set of unique n-grams in the reference
+(test) text.
+
+2.
+
+Transformer
+
+Reservoir
+
+Att-Enhanced
+
+0.6
+0.5
+0.4
+0.5
+0.4
+0.3
+15k 30k 45k
+
+100k
+Model Complexity
+
+150k
+
+FIG. 4: 7-gram and 8-gram overlap for the Transformer,
+Reservoir, and Attention-Enhanced Reservoir Computer
+over the number of trainable parameters.
+
+N-gram Overlap
+
+Overlap-n =
+
+8-gram Overlap 7-gram Overlap
+
+A.
+
+Mathematical Formulation
+
+Given a generated text G = {g1 , g2 , . . . , gM } and the
+reference text R = {r1 , r2 , . . . , rN } we extracted the ngrams as:
+Gn = {(gi , gi+1 , . . . , gi+n−1 ) | 1 ≤ i ≤ M − n + 1} ,
+
+the classic reservoir approach tends to have the lowest
+overlap and thus the lowest generalization. Transformers and Attention-Enhanced Reservoirs demonstrate on
+par diversity and distributional alignment, making them
+well-suited for tasks like text generation. Their ability
+to maintain high performance underscores their superior
+performance, due to the inclusion of neural networks.
+The traditional reservoir, though the simplest, can
+struggle with capturing complex dependencies and maintaining distributional alignment, as evidenced by its
+lower distinct-n scores. However, its simplicity remains
+valuable in scenarios where an easy hardware implementation is prioritized.
+The attention-enhanced reservoir improves upon the
+traditional model by incorporating dynamic readout
+weights, thereby enhancing its ability to capture more
+complex patterns without incurring the full computational burden of transformers. This architecture serves as
+a middle ground, offering improved performance over the
+traditional reservoir, while offering reducing complexity
+in the neural network architecture.
+
+Rn = {(rj , rj+1 , . . . , rj+n−1 ) | 1 ≤ j ≤ N − n + 1} .
+The overlap-n metric is then given by:
+|Gn ∩ Rn |
+Overlap-n =
+.
+|Gn |
+This metric assesses how well the model captures the ngram patterns present in the reference data. A higher
+overlap indicates that the generated text shares more
+common sequences with the reference, suggesting better
+generalization to the learned patterns.
+
+B.
+
+N -Gram Similarity
+
+The results of the 7-gram and 8-gram performance are
+shown in Fig. 4. The evaluation metrics reveal that
+
+C.
+
+Inference Time Comparison
+
+As a final performance metric, we evaluate the training and inference time costs for all three model architectures. Figure 5 displays the time (in seconds) required for
+both training and inference, plotted against the number
+of trainable parameters in each model. Inference time
+refers to generating a sequence over a fixed data chunk
+or producing longer text samples.
+Notably, we exclude the computational cost of the
+reservoir dynamics themselves. We assume that the
+reservoir computation can be offloaded to physical substrates such as photonic circuits, which have been experimentally shown to operate at extremely high speeds
+[28]. Such hardware would operate at time scales several
+
+7
+
+80
+
+Training and Inference Time vs Model Complexity
+01
+
+3.27e+
+
+Time (sec)
+
+60
+40
+
+Model Groups & Line Styles
+Att Reservoir
+Reservoir
+Transformer 16.0 heads
+Transformer 4.0 heads
+Transformer 8.0 heads
+Training Time
+Inference Time
+
+01
+
+1.62e+
+
+20
+0
+
+00
+8.30e+
+
+0
+
+3.08e+00
+
+-6.53e-02
+
+100k 200k 300k 400k 500k
+Number of Trainable Parameters
+
+FIG. 5: Training and inference time for a longer text generation over the number of trainable parameters for the
+Transformer, Reservoir, and Attention-Enhanced Reservoir Computer. The numbers above the line are from a fit
+applied via y = α log10 (x), where x is the number of trainable parameters, y is the training time and α the slope.
+
+orders of magnitude faster than the subsequent postprocessing by the trained layers, justifying its omission in
+this comparison.
+In Figure 5, solid lines indicate training time, while
+dashed lines represent inference time. The color scheme
+distinguishes between the three model types: classic
+reservoir (blue), attention-enhanced reservoir (orange),
+and transformer (green, red, and purple). It is evident
+that reservoir-based models exhibit substantially lower
+computational times, and their scalability with respect
+to parameter count is more favorable than that of transformers. The numbers above the line are from a fit
+applied via y = α log10 (x), where x is the number of
+trainable parameters, y is the training time and α the
+slope. From the graphs itself and the slope α we can
+see that reservoir based training and inference time is by
+magnitudes of order faster. This performance advantage
+arises because the reservoir handles the computationally
+expensive sequence processing, whereas in transformers,
+attention mechanisms scale quadratically with sequence
+length. These results suggest that using a reservoir for
+data preprocessing can significantly accelerate language
+model performance without incurring the high time cost
+associated with full transformer architectures.
+
+attention-enhanced reservoir (with a dynamic readout),
+and transformer architectures on a character-level Shakespeare corpus. By systematically varying model sizes
+and measuring cross-entropy, N-gram Overlap, and time
+costs, we revealed how each architecture scales in performance and resource usage. Transformers excel overall,
+solidifying their state-of-the-art machine learning status,
+though they are more demanding in terms of computation time due to the quadratic complexity of the sequence length. Traditional reservoirs, while limited in
+their ability to capture complex dependencies, show surprising good results for their simple buildup. Attentionenhanced reservoirs strike a balance between efficiency
+and performance, outperforming traditional reservoirs
+and even getting close to the performance of Transformer
+models while having a negotiable complexity depending
+on the sequence length.
+
+ACKNOWLEDGMENTS
+VIII.
+
+CONCLUSION
+
+We presented a unified framework for comparing classical reservoir computing (with a static linear readout), an
+
+This study was supported in part by JSPS KAKENHI (JP22H05195, JP25H01129) and JST CREST (JPMJCR24R2) in Japan.
+
+8
+
+[1] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit,
+L. Jones, A. N. Gomez, L. Kaiser, and I. Polosukhin, Attention is all you need, arXiv preprint arXiv:1706.03762
+(2017).
+[2] J. Devlin, M.-W. Chang, K. Lee, and K. Toutanova, Bert:
+Pre-training of deep bidirectional transformers for language understanding, in Proceedings of the 2019 Conference of the North American Chapter of the Association
+for Computational Linguistics: Human Language Technologies (2019) pp. 4171–4186.
+[3] A. Radford, K. Narasimhan, T. Salimans, and
+I. Sutskever, Improving language understanding by generative pre-training, Tech. Rep. (OpenAI, 2018).
+[4] T. B. Brown, B. Mann, N. Ryder, M. Subbiah, J. Kaplan, P. Dhariwal, A. Neelakantan, P. Shyam, G. Sastry,
+A. Askell, et al., Language models are few-shot learners,
+arXiv preprint arXiv:2005.14165 (2020).
+[5] T. Schick and H. Schütze, It’s not just size that matters:
+Small language models are also few-shot learners, arXiv
+preprint arXiv:2009.07118 (2020).
+[6] T. Gao, A. Fisch, and D. Chen, Making pre-trained language models better few-shot learners, arXiv preprint
+arXiv:2012.15723 (2020).
+[7] F. Köster, K. Kanno, J. Ohkubo, and A. Uchida,
+Attention-enhanced reservoir computing, Physical Review Applied 22, 014039 (2024).
+[8] H. Jaeger and H. Haas, Harnessing nonlinearity: Predicting chaotic systems and saving energy in wireless communication, Science 304, 78 (2004).
+[9] J. Pathak, B. R. Hunt, M. Girvan, Z. Lu, and E. Ott,
+Model-free prediction of large spatiotemporally chaotic
+systems from data: A reservoir computing approach,
+Physical Review Letters 120, 024102 (2018).
+[10] S. Krishnagopal, M. Girvan, E. Ott, and B. R. Hunt, Separation of chaotic signals by reservoir computing, Chaos
+30, 013118 (2020).
+[11] H. Jaeger, The “echo state” approach to analysing and
+training recurrent neural networks, Tech. Rep. 148 (German National Research Center for Information Technology GMD, 2001).
+[12] M. Lukoševičius and H. Jaeger, Reservoir computing approaches to recurrent neural network training, Computer
+Science Review 3, 127 (2009).
+[13] W. Maass, T. Natschläger, and H. Markram, Real-time
+computing without stable states: A new framework for
+neural computation based on perturbations, Neural Computation 14, 2531 (2002).
+[14] B. Schrauwen, D. Verstraeten, and J. Van Campenhout,
+An overview of reservoir computing: theory, applications
+
+and implementations, in Proceedings of the 15th European Symposium on Artificial Neural Networks (ESANN)
+(2007) pp. 471–482.
+[15] C. Fernando and S. Sojakka, Pattern recognition in
+a bucket, in International Conference on Cellular Automata (Springer, 2003) pp. 588–597.
+[16] S. Ghosh, A. Opala, M. Matuszewski, T. Paterek, and
+T. C. Liew, Quantum reservoir processing, npj Quantum
+Information 5, 1 (2019).
+[17] M. Negoro, K. Mitarai, K. Fujii, K. Nakajima, and
+M. Kitagawa, Machine learning with controllable quantum dynamics of a nuclear spin ensemble in a solid, arXiv
+preprint arXiv:1806.02841 (2018).
+[18] J. Chen, H. Nurdin, and N. Yamamoto, Temporal information processing on noisy quantum computers, Physical
+Review Applied 14, 064075 (2020).
+[19] J. Z. Kim and D. S. Bassett, A neural programming
+language for the reservoir computer, arXiv preprint
+arXiv:2203.05032 (2022).
+[20] N. Schaetti, Behaviors of reservoir computing models for
+textual documents classification, in 2019 International
+Joint Conference on Neural Networks (IJCNN) (IEEE,
+2019) pp. 1–7.
+[21] L. Sun, Z. Wang, J. Jiang, Y. Kim, B. Joo, S. Zheng,
+S. Lee, W. J. Yu, B.-S. Kong, and H. Yang, Insensor reservoir computing for language learning via twodimensional memristors, Science Advances 7, eabg1455
+(2021).
+[22] A. Karpathy, Nanogpt, https://github.com/karpathy/
+nanoGPT (2022).
+[23] C. M. Bishop, Pattern recognition and machine learning
+(Springer, 2006).
+[24] D. E. Rumelhart, G. E. Hinton, and R. J. Williams,
+Learning representations by back-propagating errors, Nature 323, 533 (1986).
+[25] D. P. Kingma and J. Ba, Adam: A method for stochastic
+optimization, International Conference on Learning Representations (ICLR) (2015), arXiv:1412.6980 [cs.LG].
+[26] J. Kaplan, S. McCandlish, T. Henighan, T. B. Brown,
+B. Chess, R. Child, S. Gray, A. Radford, J. Wu, and
+D. Amodei, Scaling laws for neural language models,
+arXiv preprint arXiv:2001.08361 (2020).
+[27] K. Papineni, S. Roukos, T. Ward, and W.-J. Zhu, Bleu:
+a method for automatic evaluation of machine translation, in Proceedings of the 40th Annual Meeting of the
+Association for Computational Linguistics (ACL, 2002)
+pp. 311–318.
+[28] K. Vandoorne et al., Experimental demonstration of
+reservoir computing on a silicon photonics chip, Nature
+Communications 5, 3541 (2014).
+
+

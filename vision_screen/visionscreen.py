@@ -255,13 +255,14 @@ class VisionMultiscreen(nn.Module):
         
         # Generate 2D patch grid coordinates dynamically to match input device/size
         Hp, Wp = self.patch_embed.grid_size
+        patch_h, patch_w = self.patch_embed.patch_size
         grid_y, grid_x = torch.meshgrid(
             torch.arange(Hp, device=img.device),
             torch.arange(Wp, device=img.device),
             indexing='ij'
         )
-        x_pos = grid_x.reshape(-1) # (N,)
-        y_pos = grid_y.reshape(-1) # (N,)
+        x_pos = (grid_x.reshape(-1) * patch_w).float() # (N,)
+        y_pos = (grid_y.reshape(-1) * patch_h).float() # (N,)
         
         # 1. Project patches and apply RSS
         emb = self.patch_embed(img) # (B, N, d_e)
@@ -277,6 +278,113 @@ class VisionMultiscreen(nn.Module):
         # 4. Compute logits using unit-normalised classifier weight (scaled by s_F)
         w_bar = rss(self.classifier_weight) # (num_classes, d_e)
         logits = torch.exp(self.s_F) * F.linear(x_gap, w_bar)
+        
+        return logits
+
+    def count_parameters(self) -> int:
+        return sum(p.numel() for p in self.parameters())
+
+# ---------------------------------------------------------------------------
+# Vision Multiscreen Model for Segmentation
+# ---------------------------------------------------------------------------
+class VisionMultiscreenSegmentation(nn.Module):
+    """
+    Vision Multiscreen model adapted for Semantic Segmentation.
+    """
+    def __init__(self, img_size=(96, 256), patch_size=16, 
+                 in_chans=3, num_classes=20,
+                 d_e=192, n_l=12, n_h=12, 
+                 d_k=16, d_v=64, w_th=256.0):
+        super().__init__()
+        self.d_e = d_e
+        self.n_l = n_l
+        self.n_h = n_h
+        self.d_k = d_k
+        self.d_v = d_v
+        self.w_th = w_th
+        self.num_classes = num_classes
+        
+        self.patch_embed = PatchEmbed(
+            img_size=img_size, patch_size=patch_size, in_chans=in_chans, d_e=d_e
+        )
+        self.num_patches = self.patch_embed.num_patches
+        
+        # Scaling parameters
+        self.s_E = nn.Parameter(torch.tensor(0.0))
+        
+        # Linearly spaced s_w and initial layer scaling s_O
+        sw_values = torch.linspace(0.0, math.log(w_th), n_h).tolist()
+        init_so = math.log(1.0 / math.sqrt(n_h * n_l))
+        
+        self.layers = nn.ModuleList([
+            VisionMultiscreenLayer(n_h, d_e, d_k, d_v, w_th=w_th,
+                                   sw_values=sw_values, init_so=init_so)
+            for _ in range(n_l)
+        ])
+        
+        # Simple segmentation decoder: projects sequence back to spatial, applies a conv, upsamples
+        self.decoder_pred = nn.Sequential(
+            nn.Conv2d(d_e, d_e, kernel_size=3, padding=1),
+            nn.BatchNorm2d(d_e),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(d_e, num_classes, kernel_size=1)
+        )
+        
+        self._init_weights()
+
+    def _init_weights(self):
+        d_k, d_v, d_e = self.d_k, self.d_v, self.d_e
+        
+        # Initialise projections
+        nn.init.normal_(self.patch_embed.proj.weight, std=0.02)
+        if self.patch_embed.proj.bias is not None:
+            nn.init.zeros_(self.patch_embed.proj.bias)
+            
+        for layer in self.layers:
+            nn.init.normal_(layer.W_Q.weight, std=0.1 / math.sqrt(d_k))
+            nn.init.normal_(layer.W_K.weight, std=0.1 / math.sqrt(d_k))
+            nn.init.normal_(layer.W_V.weight, std=0.1 / math.sqrt(d_v))
+            nn.init.normal_(layer.W_G.weight, std=0.1)
+            nn.init.normal_(layer.W_O.weight, std=0.1 / math.sqrt(d_e))
+            
+        # Init decoder weights
+        for m in self.decoder_pred.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.ones_(m.weight)
+                nn.init.zeros_(m.bias)
+
+    def forward(self, img: torch.Tensor) -> torch.Tensor:
+        B, C, H, W = img.shape
+        Hp, Wp = self.patch_embed.grid_size
+        patch_h, patch_w = self.patch_embed.patch_size
+        
+        # Generate 2D patch grid coordinates dynamically and scale to pixels
+        grid_y, grid_x = torch.meshgrid(
+            torch.arange(Hp, device=img.device),
+            torch.arange(Wp, device=img.device),
+            indexing='ij'
+        )
+        x_pos = (grid_x.reshape(-1) * patch_w).float() # (N,)
+        y_pos = (grid_y.reshape(-1) * patch_h).float() # (N,)
+        
+        # 1. Project patches and apply RSS
+        emb = self.patch_embed(img) # (B, N, d_e)
+        x = torch.exp(self.s_E) * rss(emb)
+        
+        # 2. Residual blocks
+        for layer in self.layers:
+            x = layer(x, x_pos, y_pos)
+            
+        # 3. Reshape back to spatial feature grid: (B, N, d_e) -> (B, d_e, Hp, Wp)
+        x = x.transpose(1, 2).view(B, self.d_e, Hp, Wp)
+        
+        # 4. Decoder prediction and bilinear upsample to input image size (H, W)
+        feats = self.decoder_pred(x) # (B, num_classes, Hp, Wp)
+        logits = F.interpolate(feats, size=(H, W), mode='bilinear', align_corners=True) # (B, num_classes, H, W)
         
         return logits
 
