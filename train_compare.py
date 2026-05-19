@@ -76,7 +76,7 @@ def estimate_loss(model, dataloader, device, max_batches: int = 50):
 
 @torch.no_grad()
 def generate(model, chars, seed_text: str, seq_len: int, max_new: int = 200,
-             temperature: float = 0.8, device: str = "cpu"):
+             temperature: float = 0.8, device: str = "cuda"):
     stoi = {c: i for i, c in enumerate(chars)}
     itos = {i: c for c, i in stoi.items()}
     tokens = [stoi[c] for c in seed_text if c in stoi]
@@ -186,7 +186,7 @@ def main():
                         help="Value dimension (Multiscreen)")
 
     args = parser.parse_args()
-    device = "cpu"
+    device = "cuda"
 
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
