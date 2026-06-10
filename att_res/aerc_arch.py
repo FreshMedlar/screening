@@ -2,19 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
-def _init_reservoir(rnn, spectral_radius=0.95):
-    """
-    Scale W_hh to target spectral radius (echo state property).
-    """
-    with torch.no_grad():
-        W_hh = rnn.weight_hh_l0
-        # Compute eigenvalues of recurrent recurrent weights
-        spectral_radius_curr = torch.max(torch.abs(torch.linalg.eigvals(W_hh))).item()
-        if spectral_radius_curr > 0:
-            rnn.weight_hh_l0.copy_(W_hh / spectral_radius_curr * spectral_radius)
-
-
 @torch.compile(dynamic=True)
 def _leaky_reservoir_scan(
     x: torch.Tensor,
@@ -101,6 +88,7 @@ class AERC(nn.Module):
         self.emb.weight.requires_grad = False
 
         # Fixed recurrent reservoir
+        # the rnn takes in input the embedded letter (size d_e) and does not "output" anything
         self.rnn = nn.RNN(
             input_size=d_e,
             hidden_size=N,
@@ -108,6 +96,8 @@ class AERC(nn.Module):
             bias=True,
             nonlinearity="tanh",
         )
+        # TODO it seems like there are input -> hiddent weights, but we don't need them
+        # they are like a second embedding
         self.rnn.weight_ih_l0.requires_grad = False
         self.rnn.weight_hh_l0.requires_grad = False
         self.rnn.bias_ih_l0.requires_grad = False
@@ -116,9 +106,18 @@ class AERC(nn.Module):
         with torch.no_grad():
             self.rnn.bias_ih_l0.zero_()
             self.rnn.bias_hh_l0.zero_()
+        
+        # scaling for echo state property
+        with torch.no_grad():
+            W_hh = self.rnn.weight_hh_l0
+            # Compute eigenvalues of recurrent recurrent weights
+            eigenvalues = torch.linalg.eigvals(W_hh)
+            spectral_radius_curr = torch.max(torch.abs(eigenvalues)).item()
+            if spectral_radius_curr > 0:
+                scaling_factor = spectral_radius / spectral_radius_curr
+                self.rnn.weight_hh_l0.mul_(scaling_factor)
 
-        _init_reservoir(self.rnn, spectral_radius)
-
+        # feedback settings (> 0.0 is active)
         if fb_scaling > 0.0:
             W_fb_raw = 2.0 * torch.rand(N, N) - 1.0
             with torch.no_grad():
@@ -131,7 +130,7 @@ class AERC(nn.Module):
 
         self.state_norm = nn.RMSNorm(N)
 
-        # Static ESN readout: norm(r) (N,) -> logits (V,)
+        # Static ESN readout: norm(r) (N,) -> logits (vocab_size,)
         self.static_head = nn.Linear(N, vocab_size)
 
         # Trainable attention network F: [norm(r) | y_static] (N+V,) -> W_att (H, N)
