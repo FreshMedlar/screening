@@ -156,15 +156,22 @@ class AERC(nn.Module):
             self.readout.requires_grad_(False)
             self.static_head.requires_grad_(True)
         elif phase == 2:
-            self.static_head.requires_grad_(False)
             self.state_norm.requires_grad_(True)
             self.net_gate.requires_grad_(True)
             self.net_out.requires_grad_(True)
             self.readout.requires_grad_(True)
+            self.static_head.requires_grad_(False)
         else:
             raise ValueError(f"phase must be 1 or 2, got {phase}")
 
     def compute_reservoir_states(self, idx: torch.Tensor) -> torch.Tensor:
+        """
+        Compute the states for a batched B sequence of len T with embedding dimension d_e
+        There are 3 paths for efficiency
+            1. NOT feedback NOT leak - fastest one
+            2. ONLY leak
+            3. BOTH feedback AND leak
+        """
         with torch.no_grad():
             x = self.emb(idx)           # (B, T, d_e)
 
@@ -191,6 +198,12 @@ class AERC(nn.Module):
                 )
 
     def forward(self, idx: torch.Tensor = None, states: torch.Tensor = None) -> torch.Tensor:
+        """
+        Collect states (B, T, N) -> (B*T, N)
+        Nomalize -> Basic readout -> FF -> act_fun -> 
+                 |                 |
+                 >-----------------^ 
+        """
         if states is None:
             assert idx is not None
             states = self.compute_reservoir_states(idx)
@@ -199,10 +212,10 @@ class AERC(nn.Module):
         N = orig_shape[-1]
 
         states_flat = states.reshape(-1, N)
-        B_flat = states_flat.size(0)
+        B_flat = states_flat.size(0) # B*T
 
-        states_normed = self.state_norm(states_flat)     # (B_flat, N)
-        static_logits = self.static_head(states_normed)  # (B_flat, V)
+        states_normed = self.state_norm(states_flat)     # norm neurons
+        static_logits = self.static_head(states_normed)  # base static readout
 
         att_input = torch.cat([states_normed, static_logits], dim=-1)  # (B_flat, N+V)
         gate = self.net_gate(att_input)                  # (B_flat, gate_out)
@@ -222,7 +235,9 @@ class AERC(nn.Module):
         ro = torch.matmul(W_att, states_flat.unsqueeze(-1)).squeeze(-1)  # (B_flat, H)
 
         correction  = self.readout(ro)                   # (B_flat, V)  Δy
-        logits_flat = static_logits + correction         # (B_flat, V)
+        # TODO the output should not be added to the output from the static head,
+        #       the logits should be the output of the attention readout
+        logits_flat = correction         # (B_flat, V)
 
         new_shape = orig_shape[:-1] + (self.vocab_size,)
         return logits_flat.view(new_shape)
