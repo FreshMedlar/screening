@@ -1,43 +1,58 @@
-\documentclass{article}
+\documentclass[12pt,a4paper,oneside]{report}
 
-% Required packages
+% --- Packages ---
 \usepackage[utf8]{inputenc}
-\usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{amsmath, amsfonts, amssymb, amsthm}
 \usepackage{graphicx}
-\usepackage[colorlinks=true, linkcolor=blue, citecolor=blue]{hyperref}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{cite}
+\usepackage{hyperref}
 
-% Title and Author information
-\title{A Simple Research Template}
-\author{Researcher Name}
+% --- Page Layout ---
+\geometry{top=3cm, bottom=3cm, left=3cm, right=3cm}
+\onehalfspacing
+
+% --- Metadata ---
+\title{Title of Your Thesis}
+\author{Your Name}
 \date{\today}
 
 \begin{document}
 
+% --- Front Matter ---
 \maketitle
+\begin{abstract}
+Your abstract text goes here.
+\end{abstract}
 
-\section{Introduction}
-This is a mock LaTeX document to test your Neovim configuration. LaTeX is excellent for typesetting mathematical equations, such as the Gaussian distribution:
-\begin{equation}
-    f(x) = \frac{1}{\sigma\sqrt{2\pi}} e^{-\frac{1}{2}\left(\frac{x-\mu}{\sigma}\right)^2}
-\end{equation}
+\tableofcontents
+\listoffigures
+\listoftables
 
-\section{Methodology}
-To compile this, ensure you have \texttt{latexmk} installed. You can  literature using BibTeX \cite{key}.
+% --- Main Body ---
+\chapter{Introduction}
+Text for the introduction.
 
-\begin{table}[h!]
-    \centering
-    \caption{Example Table}
-    \begin{tabular}{|c|c|}
-        \hline
-        Variable & Value \\
-        \hline
-        $\alpha$ & 0.05 \\
-        $\beta$ & 0.10 \\
-        \hline
-    \end{tabular}
-\end{table}
+\chapter{Literature Review}
+Text for the literature review.
 
-\section{Conclusion}
-If this document compiles into a PDF via your Neovim setup, your environment is correctly configured.
+\chapter{Methodology}
+Text for the methodology.
+
+\chapter{Results}
+Text for the results.
+
+\chapter{Discussion}
+Text for the discussion.
+
+\chapter{Conclusion}
+Text for the conclusion.
+
+% --- Back Matter ---
+\bibliographystyle{plain}
+\bibliography{references.bib} % Ensure you have a references.bib file
 
 \end{document}
