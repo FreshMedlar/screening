@@ -1,0 +1,43 @@
+\documentclass{article}
+
+% Required packages
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=blue]{hyperref}
+
+% Title and Author information
+\title{A Simple Research Template}
+\author{Researcher Name}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+This is a mock LaTeX document to test your Neovim configuration. LaTeX is excellent for typesetting mathematical equations, such as the Gaussian distribution:
+\begin{equation}
+    f(x) = \frac{1}{\sigma\sqrt{2\pi}} e^{-\frac{1}{2}\left(\frac{x-\mu}{\sigma}\right)^2}
+\end{equation}
+
+\section{Methodology}
+To compile this, ensure you have \texttt{latexmk} installed. You can  literature using BibTeX \cite{key}.
+
+\begin{table}[h!]
+    \centering
+    \caption{Example Table}
+    \begin{tabular}{|c|c|}
+        \hline
+        Variable & Value \\
+        \hline
+        $\alpha$ & 0.05 \\
+        $\beta$ & 0.10 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\section{Conclusion}
+If this document compiles into a PDF via your Neovim setup, your environment is correctly configured.
+
+\end{document}
