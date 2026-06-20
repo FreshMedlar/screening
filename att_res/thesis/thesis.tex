@@ -1,40 +1,52 @@
-\documentclass[12pt,a4paper,oneside]{report}
+% !TeX encoding = UTF-8
+% !TeX program = pdflatex
+% !TeX spellcheck = en_US
 
-% --- Packages ---
-\usepackage[utf8]{inputenc}
+\documentclass{sapthesis}
+
+\usepackage{microtype} % Commented out because scalable fonts (like lmodern) are missing
 \usepackage[T1]{fontenc}
-\usepackage[english]{babel}
-\usepackage{amsmath, amsfonts, amssymb, amsthm}
-\usepackage{graphicx}
-\usepackage{geometry}
-\usepackage{setspace}
-\usepackage{cite}
 \usepackage{hyperref}
+\hypersetup{pdftitle={Improving attention-enhanced reservoir computing with Intrinsic Plasticity},pdfauthor={Emanuele Segatori}}
 
-% --- Page Layout ---
-\geometry{top=3cm, bottom=3cm, left=3cm, right=3cm}
-\onehalfspacing
-
-% --- Metadata ---
-\title{Title of Your Thesis}
-\author{Your Name}
-\date{\today}
+% --- Sapienza Thesis Metadata ---
+\title{Improving attention-enhanced reservoir computing with Intrinsic Plasticity}
+\author{Emanuele Segatori}
+\IDnumber{1932373}
+\course{Applied Computer Science and Artificial Intelligence}
+\courseorganizer{Faculty of Ingegneria dell'informazione, informatica e statistica}
+\AcademicYear{2025/2026}
+\advisor{Prof. Danilo Avola}
+\coadvisor{Dr. Daniele Pannone}
+\authoremail{segatori.1932373@studenti.uniroma1.it}
+\copyyear{2026}
+\thesistype{Bachelor's thesis} % Options: PhD thesis, Master's thesis, Bachelor's thesis
 
 \begin{document}
 
-% --- Front Matter ---
+% --- Front Matter (Title Page, Dedication, Abstract, TOC) ---
+\frontmatter
 \maketitle
+\dedication{Dedicated to\\ my family and my friends.}
+
 \begin{abstract}
-Your abstract text goes here.
+While the Transformer architecture has dominated the machine learning field 
+this decade, there is a growing search for more efficient architectures 
+during both training and inference. Reservoir computing, while remaining a 
+strong class of models for time series prediction, struggles with discrete data 
+like text. Attention-enhanced reservoir computing (AERC) tries to overcome 
+this limitation using attention only on a fixed size reservoir, avoiding a 
+growing KV cache. In this paper, we integrate Intrinsic Plasticity to the 
+fixed reservoir to improve the AERC architecture and test it on a 
+wider set of tasks. We find 
 \end{abstract}
 
 \tableofcontents
-\listoffigures
-\listoftables
 
-% --- Main Body ---
+% --- Main Matter (Chapters) ---
+\mainmatter
 \chapter{Introduction}
-Text for the introduction.
+
 
 \chapter{Literature Review}
 Text for the literature review.
@@ -51,8 +63,12 @@ Text for the discussion.
 \chapter{Conclusion}
 Text for the conclusion.
 
-% --- Back Matter ---
-\bibliographystyle{plain}
-\bibliography{references.bib} % Ensure you have a references.bib file
+% --- Back Matter (Bibliography) ---
+\backmatter
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{\bibname}
+\bibliographystyle{sapthesis}
+\bibliography{references} % Requires references.bib
 
 \end{document}
