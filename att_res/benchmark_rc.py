@@ -248,7 +248,7 @@ class ContinuousAERC(nn.Module):
     """
     def __init__(self, input_dim: int, output_dim: int, d_e: int = 32, N: int = 300, H: int = 60,
                  spectral_radius: float = 0.95, fb_scaling: float = 0.0, leaking_rate: float = 1.0,
-                 dropout: float = 0.0, activation: str = "swiglu"):
+                 dropout: float = 0.0, activation: str = "silu"):
         super().__init__()
         # Set vocab_size to output_dim so final readout maps attention output H -> output_dim
         self.aerc = AERC(
@@ -420,9 +420,9 @@ def main():
     parser.add_argument(
         "--activation",
         type=str,
-        default="swiglu",
-        choices=["swiglu", "silu", "tanh", "relu"],
-        help="Attention activation function (swiglu uses gated 2H projection; others use H)",
+        default="silu",
+        choices=["silu", "tanh", "relu"],
+        help="Attention activation function (uses H dimension)",
     )
     
     args = parser.parse_args()
@@ -441,7 +441,7 @@ def main():
     
     print(f"Device: {device}")
     print(f"Parameters: N={args.N}, H={args.H}, d_e={args.d_e}, LR={args.leaking_rate}, SR={args.spectral_radius}")
-    _gate_params = (args.N + 1) * (2 * args.H if args.activation == "swiglu" else args.H)
+    _gate_params = (args.N + 1) * args.H
     print(f"Activation: {args.activation}  (net_gate params ≈ {_gate_params:,})")
     print("=" * 80)
     

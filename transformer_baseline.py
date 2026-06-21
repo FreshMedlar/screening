@@ -4,7 +4,7 @@ Transformer Baseline: LLaMA-style architecture for comparison with Multiscreen.
 Features:
   - RoPE (Rotary Position Embedding)
   - RMSNorm (pre-norm)
-  - SwiGLU feed-forward
+  - Standard feed-forward (non-gated, SiLU)
   - Multi-head causal self-attention
   - Weight-tied embedding / output head
 """
@@ -58,21 +58,20 @@ def apply_rope(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> torch.T
 
 
 # ---------------------------------------------------------------------------
-# SwiGLU Feed-Forward
+# Standard Feed-Forward
 # ---------------------------------------------------------------------------
-class SwiGLUFF(nn.Module):
-    """SwiGLU-based feed-forward as used in LLaMA."""
+class StandardFF(nn.Module):
+    """Standard feed-forward (non-gated, SiLU)."""
 
     def __init__(self, d_e: int, ff_dim: int = None):
         super().__init__()
         if ff_dim is None:
-            ff_dim = int(8 / 3 * d_e)
-        self.w_gate = nn.Linear(d_e, ff_dim, bias=False)
+            ff_dim = 4 * d_e
         self.w_up = nn.Linear(d_e, ff_dim, bias=False)
         self.w_down = nn.Linear(ff_dim, d_e, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.w_down(F.silu(self.w_gate(x)) * self.w_up(x))
+        return self.w_down(F.silu(self.w_up(x)))
 
 
 # ---------------------------------------------------------------------------
@@ -124,7 +123,7 @@ class TransformerBlock(nn.Module):
         self.norm1 = RMSNorm(d_e)
         self.attn = CausalSelfAttention(d_e, n_h, max_len)
         self.norm2 = RMSNorm(d_e)
-        self.ff = SwiGLUFF(d_e)
+        self.ff = StandardFF(d_e)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = x + self.attn(self.norm1(x))
@@ -170,8 +169,7 @@ class TransformerLM(nn.Module):
             nn.init.normal_(layer.attn.W_QKV.weight, std=small_std)
             nn.init.normal_(layer.attn.W_O.weight, std=wang_std)
 
-            # FF: small init for gate/up; Wang init for down (residual proj)
-            nn.init.normal_(layer.ff.w_gate.weight, std=small_std)
+            # FF: small init for up; Wang init for down (residual proj)
             nn.init.normal_(layer.ff.w_up.weight, std=small_std)
             nn.init.normal_(layer.ff.w_down.weight, std=wang_std)
 

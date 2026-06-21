@@ -15,6 +15,7 @@ INPUT /usr/share/texmf-dist/tex/latex/base/book.cls
 INPUT /usr/share/texmf-dist/tex/latex/base/bk11.clo
 INPUT /usr/share/texmf-dist/tex/latex/base/bk11.clo
 INPUT /usr/share/texmf-dist/tex/latex/base/bk11.clo
+INPUT /usr/share/texmf-dist/fonts/map/fontname/texfonts.map
 INPUT /usr/share/texmf-dist/fonts/tfm/public/cm/cmr10.tfm
 INPUT /usr/share/texmf-dist/tex/latex/geometry/geometry.sty
 INPUT /usr/share/texmf-dist/tex/latex/geometry/geometry.sty

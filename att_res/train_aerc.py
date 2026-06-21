@@ -192,7 +192,7 @@ def generate(model, chars, seed_text: str, seq_len: int, max_new: int = 200,
 def main():
     parser = argparse.ArgumentParser(description="AERC Training")
     parser.add_argument("--data", type=str,
-                        default="/home/medlar/Projects/Tesi_EvoRes/tinyshakespeare.txt")
+                        default="/home/medlar/Projects/screening/att_res/tinyshakespeare.txt")
     parser.add_argument("--seq_len", type=int, default=128, help="Sequence length (default: 128)")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size (default: 32)")
     parser.add_argument("--max_steps", type=int, default=2000, help="Max training steps (default: 2000)")
@@ -222,9 +222,9 @@ def main():
     parser.add_argument("--dropout", type=float, default=0.0, help="Readout network dropout")
     parser.add_argument("--leaking_rate", type=float, default=1.0, help="Leaking rate")
     parser.add_argument("--d_e", type=int, default=32, help="Embedding dimension")
-    parser.add_argument("--N_aerc", type=int, default=300, help="Reservoir size N")
-    parser.add_argument("--H_aerc", type=int, default=60, help="Attention dimension H")
-    parser.add_argument("--activation", type=str, default="swiglu", choices=["swiglu", "silu", "tanh", "relu"])
+    parser.add_argument("--N_aerc", type=int, default=55, help="Reservoir size N")
+    parser.add_argument("--H_aerc", type=int, default=51, help="Attention dimension H")
+    parser.add_argument("--activation", type=str, default="silu", choices=["silu", "tanh", "relu"])
 
     # Ridge regression (Phase 1)
     parser.add_argument("--ridge_alpha", type=float, default=1e-4, help="Ridge regularisation strength")

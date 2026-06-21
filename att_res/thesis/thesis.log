@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux) (preloaded format=pdflatex 2026.6.20)  21 JUN 2026 00:10
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux) (preloaded format=pdflatex 2026.6.21)  21 JUN 2026 19:26
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -593,15 +593,15 @@ Package rerunfilecheck Info: File `thesis.out' has not changed.
 (rerunfilecheck)             Checksum: C7A13A380899629BA16B5CD611A62EF1;700.
  ) 
 Here is how much of TeX's memory you used:
- 14309 strings out of 469515
- 228813 string characters out of 5470807
+ 14317 strings out of 469515
+ 228899 string characters out of 5470807
  673837 words of memory out of 5000000
  42664 multiletter control sequences out of 15000+600000
- 689531 words of font info for 109 fonts, out of 8000000 for 9000
+ 689900 words of font info for 113 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  84i,12n,131p,1046b,542s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr7.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmri10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmss10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmss17.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb>
-Output written on thesis.pdf (21 pages, 208683 bytes).
+Output written on thesis.pdf (21 pages, 210799 bytes).
 PDF statistics:
  193 PDF objects out of 1000 (max. 8388607)
  149 compressed objects within 2 object streams

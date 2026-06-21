@@ -2,6 +2,20 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+def _init_reservoir(rnn: nn.RNN, spectral_radius: float) -> None:
+    """
+    Scales the recurrent weights of an RNN layer to have the specified spectral radius.
+    """
+    with torch.no_grad():
+        W_hh = rnn.weight_hh_l0
+        # Compute eigenvalues of recurrent recurrent weights
+        eigenvalues = torch.linalg.eigvals(W_hh)
+        spectral_radius_curr = torch.max(torch.abs(eigenvalues)).item()
+        if spectral_radius_curr > 0:
+            scaling_factor = spectral_radius / spectral_radius_curr
+            rnn.weight_hh_l0.mul_(scaling_factor)
+
+
 @torch.compile(dynamic=True)
 def _leaky_reservoir_scan(
     x: torch.Tensor,
@@ -68,9 +82,9 @@ class AERC(nn.Module):
         fb_scaling: float = 0.0,
         dropout: float = 0.0,
         leaking_rate: float = 1.0,
-        activation: str = "swiglu",
+        activation: str = "silu",
     ):
-        _VALID = ("swiglu", "silu", "tanh", "relu")
+        _VALID = ("silu", "tanh", "relu")
         if activation not in _VALID:
             raise ValueError(f"activation must be one of {_VALID}, got {activation!r}")
         super().__init__()
@@ -134,7 +148,7 @@ class AERC(nn.Module):
         self.static_head = nn.Linear(N, vocab_size)
 
         # Trainable attention network F: [norm(r) | y_static] (N+V,) -> W_att (H, N)
-        gate_out = 2 * H if activation == "swiglu" else H
+        gate_out = H
         self.net_gate = nn.Linear(N + vocab_size, gate_out)
         self.net_out  = nn.Linear(H, H * N)
 
@@ -219,10 +233,7 @@ class AERC(nn.Module):
 
         att_input = torch.cat([states_normed, static_logits], dim=-1)  # (B_flat, N+V)
         gate = self.net_gate(att_input)                  # (B_flat, gate_out)
-        if self.activation == "swiglu":
-            x_, g_ = gate.chunk(2, dim=-1)               # each (B_flat, H)
-            h1     = x_ * F.silu(g_)                     # SwiGLU: (B_flat, H)
-        elif self.activation == "silu":
+        if self.activation == "silu":
             h1 = F.silu(gate)                            # (B_flat, H)
         elif self.activation == "tanh":
             h1 = torch.tanh(gate)                        # (B_flat, H)
@@ -235,9 +246,7 @@ class AERC(nn.Module):
         ro = torch.matmul(W_att, states_flat.unsqueeze(-1)).squeeze(-1)  # (B_flat, H)
 
         correction  = self.readout(ro)                   # (B_flat, V)  Δy
-        # TODO the output should not be added to the output from the static head,
-        #       the logits should be the output of the attention readout
-        logits_flat = correction         # (B_flat, V)
+        logits_flat = static_logits + correction           # (B_flat, V)  residual
 
         new_shape = orig_shape[:-1] + (self.vocab_size,)
         return logits_flat.view(new_shape)

@@ -7,10 +7,10 @@
 \usepackage{microtype} % Commented out because scalable fonts (like lmodern) are missing
 \usepackage[T1]{fontenc}
 \usepackage{hyperref}
-\hypersetup{pdftitle={Improving attention-enhanced reservoir computing with Intrinsic Plasticity},pdfauthor={Emanuele Segatori}}
+\hypersetup{pdftitle={Improving Attention-Enhanced Reservoir Computing with Intrinsic Plasticity},pdfauthor={Emanuele Segatori}}
 
 % --- Sapienza Thesis Metadata ---
-\title{Improving attention-enhanced reservoir computing with Intrinsic Plasticity}
+\title{Improving Attention-Enhanced Reservoir Computing with Intrinsic Plasticity}
 \author{Emanuele Segatori}
 \IDnumber{1932373}
 \course{Applied Computer Science and Artificial Intelligence}
@@ -38,7 +38,7 @@ like text. Attention-enhanced reservoir computing (AERC) tries to overcome
 this limitation using attention only on a fixed size reservoir, avoiding a 
 growing KV cache. In this paper, we integrate Intrinsic Plasticity to the 
 fixed reservoir to improve the AERC architecture and test it on a 
-wider set of tasks. We find 
+wider set of tasks. We find TODO 
 \end{abstract}
 
 \tableofcontents
@@ -46,7 +46,8 @@ wider set of tasks. We find
 % --- Main Matter (Chapters) ---
 \mainmatter
 \chapter{Introduction}
-
+In recent years there has been a growing search for efficient, subquadratic alternatives to Transformer, to make training and inference cheaper. The main approaches are to use a lighter variation of attention, such as DeepSeek Sparse Attention, or the use a linear architecture, such as RWKV or DeltaNet. 
+While Reservoir Computing is a class of architectures capable of state of the art prediction for time-series or speech recognition tasks, or more in general tasks that trains on continuous data, it struggles with discrete data, such as tokens. 
 
 \chapter{Literature Review}
 Text for the literature review.
