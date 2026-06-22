@@ -24,6 +24,7 @@ import numpy as np
 
 # Import AERC architecture and IP helper
 from aerc_arch import AERC, pretrain_reservoir_ip
+from aerc_arch_no_ip import AERC as AERCNoIP
 
 # Suppress PyTorch warnings
 import warnings
@@ -187,96 +188,15 @@ def generate(model, chars, seed_text: str, seq_len: int, max_new: int = 200,
 
 
 # ---------------------------------------------------------------------------
-# Main Training Loop
+# Helper Training Function
 # ---------------------------------------------------------------------------
-def main():
-    parser = argparse.ArgumentParser(description="AERC Training")
-    parser.add_argument("--data", type=str,
-                        default="/home/medlar/Projects/screening/att_res/tinyshakespeare.txt")
-    parser.add_argument("--seq_len", type=int, default=128, help="Sequence length (default: 128)")
-    parser.add_argument("--batch_size", type=int, default=32, help="Batch size (default: 32)")
-    parser.add_argument("--max_steps", type=int, default=2000, help="Max training steps (default: 2000)")
-    parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
-    parser.add_argument("--weight_decay", type=float, default=0.0, help="Weight decay")
-    parser.add_argument("--grad_clip", type=float, default=1.0, help="Gradient clipping threshold")
-    parser.add_argument("--warmup_steps", type=int, default=100, help="Warmup steps for LR schedule")
-    parser.add_argument("--cooldown_steps", type=int, default=200, help="Linear cooldown steps at end of training")
-    parser.add_argument("--min_lr_ratio", type=float, default=0.1, help="Min LR ratio")
-    parser.add_argument("--bf16", action="store_true", default=True, help="Use bfloat16")
-    parser.add_argument("--no_bf16", dest="bf16", action="store_false", help="Disable bfloat16")
-    parser.add_argument("--log_interval", type=int, default=100, help="Log interval")
-    parser.add_argument("--seed", type=int, default=42, help="Random seed")
-    parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
-    
-    # Intrinsic Plasticity (IP)
-    parser.add_argument("--no_ip", action="store_true", help="Disable Intrinsic Plasticity")
-    parser.add_argument("--ip_epochs", type=int, default=11, help="IP epochs")
-    parser.add_argument("--ip_lr", type=float, default=1e-5, help="IP learning rate")
-    parser.add_argument("--ip_mu", type=float, default=0.0, help="IP target mean")
-    parser.add_argument("--ip_sigma", type=float, default=0.2, help="IP target standard deviation")
-    parser.add_argument("--ip_chars", type=int, default=10000, help="IP chars count")
-    
-    # ESN Reservoir & Architecture Hyperparameters
-    parser.add_argument("--spectral_radius", type=float, default=0.95, help="ESN spectral radius")
-    parser.add_argument("--fb_scaling", type=float, default=0.0, help="Feedback scaling")
-    parser.add_argument("--dropout", type=float, default=0.0, help="Readout network dropout")
-    parser.add_argument("--leaking_rate", type=float, default=1.0, help="Leaking rate")
-    parser.add_argument("--d_e", type=int, default=32, help="Embedding dimension")
-    parser.add_argument("--N_aerc", type=int, default=55, help="Reservoir size N")
-    parser.add_argument("--H_aerc", type=int, default=51, help="Attention dimension H")
-    parser.add_argument("--activation", type=str, default="silu", choices=["silu", "tanh", "relu"])
-
-    # Ridge regression (Phase 1)
-    parser.add_argument("--ridge_alpha", type=float, default=1e-4, help="Ridge regularisation strength")
-    parser.add_argument("--ridge_chars", type=int, default=20_000, help="Chars used for ridge regression")
-
-    # Fast testing flag
-    parser.add_argument("--test_only", action="store_true", help="Run a quick validation check and exit")
-
-    args = parser.parse_args()
-    device = args.device
-
-    if args.test_only:
-        print(">>> Fast verification test requested. Overriding configuration parameters.")
-        args.max_steps = 200
-        args.batch_size = 32
-        args.ip_epochs = 1
-        args.ip_chars = 1000
-        args.log_interval = 50
-        args.ridge_chars = 1000
-
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
-
-    print(f"Loading data from {args.data}...")
-    train_ds, val_ds, chars, vocab_size = load_data(args.data, args.seq_len)
-    print(f"  vocab_size={vocab_size}  train={len(train_ds):,}  val={len(val_ds):,}")
-
+def train_model(model, args, train_ds, val_ds, device, run_ip=False):
+    # Setup dataloaders
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, drop_last=True)
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, drop_last=True)
-
-    # Build AERC model
-    print("\n" + "=" * 70)
-    print("AERC  (Attention-Enhanced Reservoir Computing)")
-    print("=" * 70)
-    model = AERC(
-        vocab_size=vocab_size,
-        d_e=args.d_e,
-        N=args.N_aerc,
-        H=args.H_aerc,
-        spectral_radius=args.spectral_radius,
-        fb_scaling=args.fb_scaling,
-        dropout=args.dropout,
-        leaking_rate=args.leaking_rate,
-        activation=args.activation,
-    ).to(device)
-
-    aerc_params = model.count_parameters()
-    print(f"  Parameters: {aerc_params:,}")
-    print(f"  Config: d_e={args.d_e}, N={args.N_aerc}, H={args.H_aerc}, SR={args.spectral_radius}, activation={args.activation}")
-
+    
     # Intrinsic Plasticity (IP) Pre-training
-    if not args.no_ip:
+    if run_ip:
         print("\n" + "=" * 70)
         print("IP Pre-training AERC ...")
         print("=" * 70)
@@ -344,7 +264,8 @@ def main():
 
     # Phase 2 Training Loop
     print("\n" + "=" * 70)
-    print("Phase 2  ─  Training AERC attention correction ...")
+    name_str = "AERC with IP" if run_ip else "AERC without IP"
+    print(f"Phase 2  ─  Training {name_str} attention correction ...")
     print("=" * 70)
 
     train_losses = []
@@ -381,16 +302,152 @@ def main():
                 val_loss = estimate_loss(model, val_loader, device, use_bf16=use_bf16)
                 val_losses.append((step, val_loss))
                 ppl = math.exp(min(val_loss, 20))
-                print(f"  [AERC] step {step:5d}/{args.max_steps} | "
+                print(f"  [{name_str}] step {step:5d}/{args.max_steps} | "
                       f"train {loss.item():.4f} | val {val_loss:.4f} | "
                       f"ppl {ppl:.2f} | {elapsed:.1f}s")
 
+    return train_losses, val_losses, static_val_loss, aerc_params
+
+
+# ---------------------------------------------------------------------------
+# Main Training Loop
+# ---------------------------------------------------------------------------
+def main():
+    parser = argparse.ArgumentParser(description="AERC Training")
+    parser.add_argument("--data", type=str,
+                        default=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tinyshakespeare.txt"))
+    parser.add_argument("--seq_len", type=int, default=128, help="Sequence length (default: 128)")
+    parser.add_argument("--batch_size", type=int, default=32, help="Batch size (default: 32)")
+    parser.add_argument("--max_steps", type=int, default=2000, help="Max training steps (default: 2000)")
+    parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
+    parser.add_argument("--weight_decay", type=float, default=0.0, help="Weight decay")
+    parser.add_argument("--grad_clip", type=float, default=1.0, help="Gradient clipping threshold")
+    parser.add_argument("--warmup_steps", type=int, default=100, help="Warmup steps for LR schedule")
+    parser.add_argument("--cooldown_steps", type=int, default=200, help="Linear cooldown steps at end of training")
+    parser.add_argument("--min_lr_ratio", type=float, default=0.1, help="Min LR ratio")
+    parser.add_argument("--bf16", action="store_true", default=True, help="Use bfloat16")
+    parser.add_argument("--no_bf16", dest="bf16", action="store_false", help="Disable bfloat16")
+    parser.add_argument("--log_interval", type=int, default=100, help="Log interval")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
+    
+    # Intrinsic Plasticity (IP)
+    parser.add_argument("--no_ip", action="store_true", help="Disable Intrinsic Plasticity")
+    parser.add_argument("--ip_epochs", type=int, default=11, help="IP epochs")
+    parser.add_argument("--ip_lr", type=float, default=1e-5, help="IP learning rate")
+    parser.add_argument("--ip_mu", type=float, default=0.0, help="IP target mean")
+    parser.add_argument("--ip_sigma", type=float, default=0.2, help="IP target standard deviation")
+    parser.add_argument("--ip_chars", type=int, default=10000, help="IP chars count")
+    
+    # ESN Reservoir & Architecture Hyperparameters
+    parser.add_argument("--spectral_radius", type=float, default=0.95, help="ESN spectral radius")
+    parser.add_argument("--fb_scaling", type=float, default=0.0, help="Feedback scaling")
+    parser.add_argument("--dropout", type=float, default=0.0, help="Readout network dropout")
+    parser.add_argument("--leaking_rate", type=float, default=1.0, help="Leaking rate")
+    parser.add_argument("--d_e", type=int, default=32, help="Embedding dimension")
+    parser.add_argument("--N_aerc", type=int, default=55, help="Reservoir size N")
+    parser.add_argument("--H_aerc", type=int, default=51, help="Attention dimension H")
+    parser.add_argument("--activation", type=str, default="silu", choices=["silu", "tanh", "relu"])
+
+    # Ridge regression (Phase 1)
+    parser.add_argument("--ridge_alpha", type=float, default=1e-4, help="Ridge regularisation strength")
+    parser.add_argument("--ridge_chars", type=int, default=20_000, help="Chars used for ridge regression")
+
+    # Fast testing flag
+    parser.add_argument("--test_only", action="store_true", help="Run a quick validation check and exit")
+
+    args = parser.parse_args()
+    device = args.device
+
+    if args.test_only:
+        print(">>> Fast verification test requested. Overriding configuration parameters.")
+        args.max_steps = 200
+        args.batch_size = 32
+        args.ip_epochs = 1
+        args.ip_chars = 1000
+        args.log_interval = 50
+        args.ridge_chars = 1000
+
+    print(f"Loading data from {args.data}...")
+    train_ds, val_ds, chars, vocab_size = load_data(args.data, args.seq_len)
+    print(f"  vocab_size={vocab_size}  train={len(train_ds):,}  val={len(val_ds):,}")
+
+    # Build AERC model WITH IP
+    print("\n" + "=" * 70)
+    print("AERC with Intrinsic Plasticity (IP)")
+    print("=" * 70)
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    model_ip = AERC(
+        vocab_size=vocab_size,
+        d_e=args.d_e,
+        N=args.N_aerc,
+        H=args.H_aerc,
+        spectral_radius=args.spectral_radius,
+        fb_scaling=args.fb_scaling,
+        dropout=args.dropout,
+        leaking_rate=args.leaking_rate,
+        activation=args.activation,
+    ).to(device)
+
+    aerc_params_ip = model_ip.count_parameters()
+    print(f"  Parameters: {aerc_params_ip:,}")
+    print(f"  Config: d_e={args.d_e}, N={args.N_aerc}, H={args.H_aerc}, SR={args.spectral_radius}, activation={args.activation}")
+
+    train_losses_ip, val_losses_ip, static_val_loss_ip, _ = train_model(
+        model=model_ip,
+        args=args,
+        train_ds=train_ds,
+        val_ds=val_ds,
+        device=device,
+        run_ip=True
+    )
+
     # Generate sample
     print("\n" + "=" * 70)
-    print("Generated text (AERC):")
+    print("Generated text (AERC with IP):")
     print("-" * 40)
     seed_text = "ROMEO:\n"
-    print(seed_text + generate(model, chars, seed_text, args.seq_len, device=device))
+    print(seed_text + generate(model_ip, chars, seed_text, args.seq_len, device=device))
+    print("=" * 70)
+
+    # Build AERC model WITHOUT IP
+    print("\n" + "=" * 70)
+    print("AERC without Intrinsic Plasticity (IP)")
+    print("=" * 70)
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    model_no_ip = AERCNoIP(
+        vocab_size=vocab_size,
+        d_e=args.d_e,
+        N=args.N_aerc,
+        H=args.H_aerc,
+        spectral_radius=args.spectral_radius,
+        fb_scaling=args.fb_scaling,
+        dropout=args.dropout,
+        leaking_rate=args.leaking_rate,
+        activation=args.activation,
+    ).to(device)
+
+    aerc_params_no_ip = model_no_ip.count_parameters()
+    print(f"  Parameters: {aerc_params_no_ip:,}")
+    print(f"  Config: d_e={args.d_e}, N={args.N_aerc}, H={args.H_aerc}, SR={args.spectral_radius}, activation={args.activation}")
+
+    train_losses_no_ip, val_losses_no_ip, static_val_loss_no_ip, _ = train_model(
+        model=model_no_ip,
+        args=args,
+        train_ds=train_ds,
+        val_ds=val_ds,
+        device=device,
+        run_ip=False
+    )
+
+    # Generate sample
+    print("\n" + "=" * 70)
+    print("Generated text (AERC without IP):")
+    print("-" * 40)
+    seed_text = "ROMEO:\n"
+    print(seed_text + generate(model_no_ip, chars, seed_text, args.seq_len, device=device))
     print("=" * 70)
 
     # Plotting
@@ -407,7 +464,8 @@ def main():
             return np.convolve(vals, np.ones(w) / w, mode="valid")
 
         ax = axes[0]
-        ax.plot(smooth(train_losses), label=f"AERC correction ({aerc_params:,} params)", alpha=0.9)
+        ax.plot(smooth(train_losses_ip), label=f"AERC with IP ({aerc_params_ip:,} params)", alpha=0.9, color="C0")
+        ax.plot(smooth(train_losses_no_ip), label=f"AERC without IP ({aerc_params_no_ip:,} params)", alpha=0.9, color="C1")
         ax.set_xlabel("Training step")
         ax.set_ylabel("Cross-entropy loss")
         ax.set_title("Training Loss (Phase 2)")
@@ -415,22 +473,30 @@ def main():
         ax.grid(True, alpha=0.3)
 
         ax = axes[1]
-        if val_losses:
-            steps, vloss = zip(*val_losses)
-            ax.plot(steps, vloss, "s-", label=f"AERC ({aerc_params:,} params)", color="C1")
-        ax.axhline(static_val_loss, color="grey", linestyle="--", linewidth=1.2,
-                   label=f"Static ESN baseline ({static_val_loss:.4f})")
+        if val_losses_ip:
+            steps, vloss = zip(*val_losses_ip)
+            ax.plot(steps, vloss, "s-", label=f"AERC with IP ({aerc_params_ip:,} params)", color="C0")
+        if val_losses_no_ip:
+            steps, vloss = zip(*val_losses_no_ip)
+            ax.plot(steps, vloss, "s-", label=f"AERC without IP ({aerc_params_no_ip:,} params)", color="C1")
+        
+        ax.axhline(static_val_loss_ip, color="C0", linestyle="--", linewidth=1.2,
+                   label=f"Static ESN baseline with IP ({static_val_loss_ip:.4f})")
+        ax.axhline(static_val_loss_no_ip, color="C1", linestyle="--", linewidth=1.2,
+                   label=f"Static ESN baseline without IP ({static_val_loss_no_ip:.4f})")
+        
         ax.set_xlabel("Training step")
         ax.set_ylabel("Validation loss")
         ax.set_title("Validation Loss")
         ax.legend()
         ax.grid(True, alpha=0.3)
 
-        plt.suptitle("AERC Training Progress · Character-level tinyshakespeare", fontsize=13, fontweight="bold")
+        plt.suptitle("AERC Training Progress (With vs Without IP) · Character-level tinyshakespeare", fontsize=13, fontweight="bold")
         plt.tight_layout()
-        out_path = os.path.join(os.path.dirname(__file__), "aerc_training_loss.png")
+        out_dir = os.path.dirname(os.path.abspath(__file__))
+        out_path = os.path.join(out_dir, "aerc_training_loss.png")
         plt.savefig(out_path, dpi=150)
-        print(f"\n✓ Training plot saved to {out_path}")
+        print(f"\n✓ Training comparison plot saved to {out_path}")
     except ImportError:
         print("\n⚠ matplotlib not installed — skipping plot.")
 

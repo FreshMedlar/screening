@@ -308,7 +308,9 @@ def main():
         ax.grid(True, alpha=0.3)
 
         plt.tight_layout()
-        out_path = os.path.join(os.path.dirname(__file__), "replicate_155k_loss.png")
+        out_dir = os.path.join(os.path.dirname(__file__), "images")
+        os.makedirs(out_dir, exist_ok=True)
+        out_path = os.path.join(out_dir, "replicate_155k_loss.png")
         plt.savefig(out_path, dpi=150)
         print(f"\n✓ Training plot saved to {out_path}")
     except ImportError:

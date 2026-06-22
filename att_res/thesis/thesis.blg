@@ -2,52 +2,50 @@ This is BibTeX, Version 0.99e (TeX Live 2026/Arch Linux)
 Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: thesis.aux
 The style file: sapthesis.bst
-I found no \citation commands---while reading file thesis.aux
 Reallocated singl_function (elt_size=8) to 100 items from 50.
 Reallocated glb_str_ptr (elt_size=8) to 20 items from 10.
 Reallocated global_strs (elt_size=200001) to 20 items from 10.
 Reallocated glb_str_end (elt_size=8) to 20 items from 10.
 Reallocated wiz_functions (elt_size=8) to 6000 items from 3000.
 Database file #1: references.bib
-You've used 0 entries,
+You've used 11 entries,
             3472 wiz_defined-function locations,
-            693 strings with 5530 characters,
-and the built_in function-call counts, 37 in all, are:
-= -- 0
-> -- 0
-< -- 0
-+ -- 0
-- -- 0
-* -- 2
-:= -- 26
-add.period$ -- 0
-call.type$ -- 0
-change.case$ -- 0
+            781 strings with 9131 characters,
+and the built_in function-call counts, 6312 in all, are:
+= -- 577
+> -- 239
+< -- 1
++ -- 118
+- -- 66
+* -- 380
+:= -- 786
+add.period$ -- 41
+call.type$ -- 11
+change.case$ -- 67
 chr.to.int$ -- 0
-cite$ -- 0
-duplicate$ -- 0
-empty$ -- 1
-format.name$ -- 0
-if$ -- 1
+cite$ -- 11
+duplicate$ -- 390
+empty$ -- 552
+format.name$ -- 76
+if$ -- 1517
 int.to.chr$ -- 0
-int.to.str$ -- 0
-missing$ -- 0
-newline$ -- 3
-num.names$ -- 0
-pop$ -- 0
+int.to.str$ -- 11
+missing$ -- 91
+newline$ -- 65
+num.names$ -- 23
+pop$ -- 245
 preamble$ -- 1
-purify$ -- 0
+purify$ -- 51
 quote$ -- 0
-skip$ -- 1
+skip$ -- 360
 stack$ -- 0
-substring$ -- 0
-swap$ -- 0
-text.length$ -- 0
+substring$ -- 157
+swap$ -- 254
+text.length$ -- 1
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 0
+type$ -- 44
 warning$ -- 0
-while$ -- 0
-width$ -- 0
-write$ -- 2
-(There was 1 error message)
+while$ -- 29
+width$ -- 13
+write$ -- 135

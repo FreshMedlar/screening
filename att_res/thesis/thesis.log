@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux) (preloaded format=pdflatex 2026.6.21)  21 JUN 2026 19:26
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux) (preloaded format=pdflatex 2026.6.21)  22 JUN 2026 19:29
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -578,13 +578,27 @@ Chapter 6.
 [11] [12
 
 ] (./thesis.bbl
+Package microtype Info: Character `029' is missing
+(microtype)             in font `T1/lmr/m/sc/10.95'.
+(microtype)             Ignoring protrusion settings for this character.
+LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 9.
+ (/usr/share/texmf-dist/tex/latex/lm/t1lmtt.fd
+File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
+)
+Package microtype Info: Loading generic protrusion settings for font family
+(microtype)             `lmtt' (encoding: T1).
+(microtype)             For optimal results, create family-specific settings.
+(microtype)             See the microtype manual for details.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <10.95> on input line 9.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <8> on input line 9.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <6> on input line 9.
+ [13
 
-LaTeX Warning: Empty `thebibliography' environment on input line 3.
 
-) [13
-
-
-] (./thesis.aux)
+]) [14] (./thesis.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
@@ -593,18 +607,18 @@ Package rerunfilecheck Info: File `thesis.out' has not changed.
 (rerunfilecheck)             Checksum: C7A13A380899629BA16B5CD611A62EF1;700.
  ) 
 Here is how much of TeX's memory you used:
- 14317 strings out of 469515
- 228899 string characters out of 5470807
- 673837 words of memory out of 5000000
- 42664 multiletter control sequences out of 15000+600000
- 689900 words of font info for 113 fonts, out of 8000000 for 9000
+ 14463 strings out of 469515
+ 231310 string characters out of 5470807
+ 683348 words of memory out of 5000000
+ 42745 multiletter control sequences out of 15000+600000
+ 705689 words of font info for 145 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 84i,12n,131p,1046b,542s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/share/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr7.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmri10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmss10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmss17.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb>
-Output written on thesis.pdf (21 pages, 210799 bytes).
+ 84i,12n,131p,1046b,580s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</usr/share/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmcsc10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr7.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmri10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmss10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmss17.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
+Output written on thesis.pdf (22 pages, 282836 bytes).
 PDF statistics:
- 193 PDF objects out of 1000 (max. 8388607)
- 149 compressed objects within 2 object streams
- 31 named destinations out of 1000 (max. 500000)
- 38974 words of extra memory for PDF output out of 42996 (max. 10000000)
+ 258 PDF objects out of 1000 (max. 8388607)
+ 208 compressed objects within 3 object streams
+ 43 named destinations out of 1000 (max. 500000)
+ 47678 words of extra memory for PDF output out of 51595 (max. 10000000)
 

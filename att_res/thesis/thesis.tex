@@ -46,8 +46,22 @@ wider set of tasks. We find TODO
 % --- Main Matter (Chapters) ---
 \mainmatter
 \chapter{Introduction}
-In recent years there has been a growing search for efficient, subquadratic alternatives to Transformer, to make training and inference cheaper. The main approaches are to use a lighter variation of attention, such as DeepSeek Sparse Attention, or the use a linear architecture, such as RWKV or DeltaNet. 
-While Reservoir Computing is a class of architectures capable of state of the art prediction for time-series or speech recognition tasks, or more in general tasks that trains on continuous data, it struggles with discrete data, such as tokens. 
+In recent years there has been a growing search for efficient, subquadratic alternatives to Transformer, to make training and inference cheaper. The main approaches use a lighter variant of attention, such as Native Sparse Attention \cite{yuan-etal-2025-native}, or a linear architecture, such as Mamba\cite{gu2024mambalineartimesequencemodeling} or RWKV\cite{peng2023rwkvreinventingrnnstransformer}. 
+
+One architecture that has attracted interest for sequence modeling within the class of recurrent neural networks is the Reservoir Computing (RC) model\cite{jaeger2001echo}, which uses a fixed recurrent reservoir for non-linear temporal expansion of the inputs, and a linear layer to extract meaning for the high-dimensional data.
+Reservoir Computing models, while showing state of the art results in time series applications, struggle with discrete data, and have been therefore ignored for text autoregression. The promising aspects of RC are in the fixed, recurrent, non-linear reservoir and the trainable linear output layer, which can be trained using Ridge Regression. In addition, the use of a physical reservoir makes this process even more efficient, while increasing the capabilities of the model\cite{Brunner2013ParallelPI}.
+
+Building upon the RC model there have been studies to expand its capabilities using multiple reservoirs \cite{Gallicchio2016DeepRC}, replacing the reservoir with a direct nonlinear feature-expansion model\cite{Gauthier_2021}, enforcing the Echo State Property for the reservoir connection matrix\cite{jaeger2001echo}, using leaky neurons\cite{JAEGER2007335}, feedback connections\cite{Lukosevicius2007} and Intrinsic Plasticity(IP)\cite{10.1016/j.neucom.2007.12.020}.
+While these approaches have improved the base RC model, they still struggle with discrete data. 
+
+For this reason, an Attention-Enhanced Reservoir Computing (AERC) model has been proposed \cite{köster2024attentionenhancedreservoircomputing}, using dynamically generated attention weights, greatly improving the performance of the model with discrete data while still leveraging the cheap recurrence of the fixed reservoir.
+
+In this thesis we:
+- integrate IP in the AERC model
+
+
+
+
 
 \chapter{Literature Review}
 Text for the literature review.

@@ -754,7 +754,9 @@ def main():
         plt.suptitle("Reservoir Computing Benchmarks: Classic vs AERC vs AERC+Ridge", fontsize=14, fontweight="bold")
         plt.tight_layout()
         
-        out_path = os.path.join(os.path.dirname(__file__), "benchmark_comparison.png")
+        out_dir = os.path.join(os.path.dirname(__file__), "images")
+        os.makedirs(out_dir, exist_ok=True)
+        out_path = os.path.join(out_dir, "benchmark_comparison.png")
         plt.savefig(out_path, dpi=150)
         print(f"\n✓ Benchmark comparison plot saved to {out_path}")
         

@@ -1,3 +1,90 @@
-\begin{thebibliography}{}
+\begin{thebibliography}{10}
+
+\bibitem{Brunner2013ParallelPI}
+\textsc{Brunner, D., Soriano, M.~C., Mirasso, C.~R., and Fischer, I.}
+\newblock Parallel photonic information processing at gigabyte per second data
+  rates using transient states.
+\newblock \emph{Nature Communications}, \textbf{4} (2013).
+\newblock Available from:
+  \url{https://api.semanticscholar.org/CorpusID:14114724}.
+
+\bibitem{Gallicchio2016DeepRC}
+\textsc{Gallicchio, C. and Micheli, A.}
+\newblock Deep reservoir computing: A critical analysis.
+\newblock In \emph{The European Symposium on Artificial Neural Networks}
+  (2016).
+\newblock Available from:
+  \url{https://api.semanticscholar.org/CorpusID:27054014}.
+
+\bibitem{Gauthier_2021}
+\textsc{Gauthier, D.~J., Bollt, E., Griffith, A., and Barbosa, W. A.~S.}
+\newblock Next generation reservoir computing.
+\newblock \emph{Nature Communications}, \textbf{12} (2021).
+\newblock Available from: \url{http://dx.doi.org/10.1038/s41467-021-25801-2},
+  \href {http://dx.doi.org/10.1038/s41467-021-25801-2}
+  {\path{doi:10.1038/s41467-021-25801-2}}.
+
+\bibitem{gu2024mambalineartimesequencemodeling}
+\textsc{Gu, A. and Dao, T.}
+\newblock Mamba: Linear-time sequence modeling with selective state spaces
+  (2024).
+\newblock Available from: \url{https://arxiv.org/abs/2312.00752}, \href
+  {http://arxiv.org/abs/2312.00752} {\path{arXiv:2312.00752}}.
+
+\bibitem{jaeger2001echo}
+\textsc{Jaeger, H.}
+\newblock The “echo state” approach to analysing and training recurrent
+  neural networks-with an erratum note.
+\newblock \emph{Bonn, Germany: German national research center for information
+  technology gmd technical report}, \textbf{148} (2001), 13.
+
+\bibitem{JAEGER2007335}
+\textsc{Jaeger, H., Lukoševičius, M., Popovici, D., and Siewert, U.}
+\newblock Optimization and applications of echo state networks with leaky-
+  integrator neurons.
+\newblock \emph{Neural Networks}, \textbf{20} (2007), 335.
+\newblock Echo State Networks and Liquid State Machines.
+\newblock Available from:
+  \url{https://www.sciencedirect.com/science/article/pii/S089360800700041X},
+  \href {http://dx.doi.org/https://doi.org/10.1016/j.neunet.2007.04.016}
+  {\path{doi:https://doi.org/10.1016/j.neunet.2007.04.016}}.
+
+\bibitem{köster2024attentionenhancedreservoircomputing}
+\textsc{Köster, F., Kanno, K., Ohkubo, J., and Uchida, A.}
+\newblock Attention-enhanced reservoir computing (2024).
+\newblock Available from: \url{https://arxiv.org/abs/2312.16503}, \href
+  {http://arxiv.org/abs/2312.16503} {\path{arXiv:2312.16503}}.
+
+\bibitem{Lukosevicius2007}
+\textsc{Lukosevicius, M.}
+\newblock Echo state networks with trained feedbacks (2007).
+
+\bibitem{peng2023rwkvreinventingrnnstransformer}
+\textsc{Peng, B., et~al.}
+\newblock Rwkv: Reinventing rnns for the transformer era (2023).
+\newblock Available from: \url{https://arxiv.org/abs/2305.13048}, \href
+  {http://arxiv.org/abs/2305.13048} {\path{arXiv:2305.13048}}.
+
+\bibitem{10.1016/j.neucom.2007.12.020}
+\textsc{Schrauwen, B., Wardermann, M., Verstraeten, D., Steil, J.~J., and
+  Stroobandt, D.}
+\newblock Improving reservoirs using intrinsic plasticity.
+\newblock \emph{Neurocomput.}, \textbf{71} (2008), 1159–1171.
+\newblock Available from: \url{https://doi.org/10.1016/j.neucom.2007.12.020},
+  \href {http://dx.doi.org/10.1016/j.neucom.2007.12.020}
+  {\path{doi:10.1016/j.neucom.2007.12.020}}.
+
+\bibitem{yuan-etal-2025-native}
+\textsc{Yuan, J., et~al.}
+\newblock Native sparse attention: Hardware-aligned and natively trainable
+  sparse attention.
+\newblock In \emph{Proceedings of the 63rd Annual Meeting of the Association
+  for Computational Linguistics (Volume 1: Long Papers)} (edited by W.~Che,
+  J.~Nabende, E.~Shutova, and M.~T. Pilehvar), pp. 23078--23097. Association
+  for Computational Linguistics, Vienna, Austria (2025).
+\newblock ISBN 979-8-89176-251-0.
+\newblock Available from: \url{https://aclanthology.org/2025.acl-long.1126/},
+  \href {http://dx.doi.org/10.18653/v1/2025.acl-long.1126}
+  {\path{doi:10.18653/v1/2025.acl-long.1126}}.
 
 \end{thebibliography}
