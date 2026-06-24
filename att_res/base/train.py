@@ -175,9 +175,21 @@ def train_model(model, label, train_loader, val_loader, args, device, use_bf16):
                 val_loss = estimate_loss(model, val_loader, device, use_bf16=use_bf16)
                 val_losses.append((step, val_loss))
                 ppl = math.exp(min(val_loss, 20))
-                print(f"  step {step:5d}/{args.max_steps} | "
-                      f"train {loss.item():.4f} | val {val_loss:.4f} | "
-                      f"ppl {ppl:.2f} | {elapsed:.1f}s")
+                if hasattr(model, "ip_a"):
+                    with torch.no_grad():
+                        mean_a = model.ip_a.mean().item()
+                        mean_b = model.ip_b.mean().item()
+                        std_a  = model.ip_a.std().item()
+                        std_b  = model.ip_b.std().item()
+                    print(f"  step {step:5d}/{args.max_steps} | "
+                          f"train {loss.item():.4f} | val {val_loss:.4f} | "
+                          f"ppl {ppl:.2f} | "
+                          f"ip_a {mean_a:.4f}±{std_a:.4f} | ip_b {mean_b:.4f}±{std_b:.4f} | "
+                          f"{elapsed:.1f}s")
+                else:
+                    print(f"  step {step:5d}/{args.max_steps} | "
+                          f"train {loss.item():.4f} | val {val_loss:.4f} | "
+                          f"ppl {ppl:.2f} | {elapsed:.1f}s")
 
     return train_losses, val_losses
 
@@ -192,8 +204,8 @@ def main():
     parser.add_argument("--seq_len", type=int, default=128, help="Sequence length")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
     parser.add_argument("--max_steps", type=int, default=2000, help="Max training steps")
-    parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
-    parser.add_argument("--weight_decay", type=float, default=1e-4, help="Weight decay")
+    parser.add_argument("--lr", type=float, default=5e-3, help="Learning rate")
+    parser.add_argument("--weight_decay", type=float, default=1e-3, help="Weight decay")
     parser.add_argument("--grad_clip", type=float, default=1.0, help="Gradient clipping threshold")
     parser.add_argument("--warmup_steps", type=int, default=100, help="Warmup steps")
     parser.add_argument("--cooldown_steps", type=int, default=200, help="Cooldown steps")
@@ -206,16 +218,15 @@ def main():
     
     # ESN Reservoir & Architecture Hyperparameters
     parser.add_argument("--spectral_radius", type=float, default=0.95, help="ESN spectral radius")
-    parser.add_argument("--leaking_rate", type=float, default=1.0, help="Reservoir leaking rate alpha in (0,1]")
     parser.add_argument("--d_e", type=int, default=16, help="Embedding dimension")
-    parser.add_argument("--N", type=int, default=150, help="Reservoir size N")
-    parser.add_argument("--H", type=int, default=31, help="Attention hidden dimension H")
+    parser.add_argument("--N", type=int, default=160, help="Reservoir size N")
+    parser.add_argument("--H", type=int, default=30, help="Attention hidden dimension H")
 
     # Intrinsic Plasticity (IP) Hyperparameters
-    parser.add_argument("--ip_epochs", type=int, default=11, help="IP pre-training epochs")
+    parser.add_argument("--ip_epochs", type=int, default=10, help="IP pre-training epochs")
     parser.add_argument("--ip_lr", type=float, default=1e-5, help="IP learning rate")
     parser.add_argument("--ip_mu", type=float, default=0.0, help="IP target mean")
-    parser.add_argument("--ip_sigma", type=float, default=0.5, help="IP target std (recommended 0.5-0.6)")
+    parser.add_argument("--ip_sigma", type=float, default=0.4, help="IP target std (recommended 0.4-0.6)")
     parser.add_argument("--ip_chars", type=int, default=10000, help="Chars per IP epoch (sequential, no repetition)")
 
     # Fast testing flag
@@ -250,7 +261,6 @@ def main():
         N=args.N,
         H=args.H,
         spectral_radius=args.spectral_radius,
-        leaking_rate=args.leaking_rate,
     ).to(device)
 
     # Initialize Model B: AERC IP (with IP pre-training)
@@ -262,14 +272,13 @@ def main():
         N=args.N,
         H=args.H,
         spectral_radius=args.spectral_radius,
-        leaking_rate=args.leaking_rate,
     ).to(device)
 
     trainable_params = model_base.count_parameters()
     print("\n" + "=" * 70)
     print("AERC Comparison Setup:")
     print(f"  Trainable Parameters: {trainable_params:,} per model")
-    print(f"  Config: d_e={args.d_e}, N={args.N}, H={args.H}, SR={args.spectral_radius}, leaking_rate={args.leaking_rate}")
+    print(f"  Config: d_e={args.d_e}, N={args.N}, H={args.H}, SR={args.spectral_radius}")
     print("=" * 70)
 
     # Pre-train Model B (IP) — each epoch uses a new sequential slice of ip_chars characters

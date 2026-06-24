@@ -130,40 +130,37 @@ def grid_search(args):
 
     # ── Grid definition ────────────────────────────────────────────────────
     grid_ip_sigma     = args.ip_sigmas
-    grid_leaking_rate = args.leaking_rates
     grid_lr           = args.lrs if args.grid_lr else [args.lr]
 
-    # Base model only depends on (lr, leaking_rate) — NOT on ip_sigma.
-    # Train it once per (lr, leaking_rate) pair, then reuse for all ip_sigma values.
-    outer_combos = list(itertools.product(grid_lr, grid_leaking_rate))
+    # Base model only depends on lr — NOT on ip_sigma.
+    # Train it once per lr, then reuse for all ip_sigma values.
+    outer_combos = grid_lr
     total_base   = len(outer_combos)
     total_ip     = len(outer_combos) * len(grid_ip_sigma)
 
     print("=" * 70)
     print(f"Grid search: {total_base} base runs + {total_ip} IP runs = {total_base + total_ip} total")
     print(f"  lr values       : {grid_lr}")
-    print(f"  leaking_rate    : {grid_leaking_rate}")
     print(f"  ip_sigma values : {grid_ip_sigma}")
     print(f"  max_steps       : {args.max_steps}")
     print("=" * 70 + "\n")
 
     results = []
-    base_cache: dict = {}  # (lr, leaking_rate) -> val_base
+    base_cache: dict = {}  # lr -> val_base
 
     outer_idx = 0
-    for lr, alpha in outer_combos:
+    for lr in outer_combos:
         outer_idx += 1
         print(f"{'═'*60}")
-        print(f"[outer {outer_idx}/{total_base}] lr={lr:.0e}  leak={alpha}")
+        print(f"[outer {outer_idx}/{total_base}] lr={lr:.0e}")
 
-        # ── Base model — trained ONCE per (lr, leaking_rate) ─────────────
+        # ── Base model — trained ONCE per lr ─────────────────────────────────
         torch.manual_seed(args.seed)
         np.random.seed(args.seed)
         model_base = AERC_Base(
             vocab_size=vocab_size,
             d_e=args.d_e, N=args.N, H=args.H,
             spectral_radius=args.spectral_radius,
-            leaking_rate=alpha,
         ).to(device)
 
         t0 = time.time()
@@ -177,7 +174,7 @@ def grid_search(args):
         )
         del model_base  # free VRAM before IP runs
         t_base = time.time() - t0
-        base_cache[(lr, alpha)] = val_base
+        base_cache[lr] = val_base
         print(f"  Base  : val_loss={val_base:.4f}  ({t_base:.0f}s)")
 
         # ── IP models — one per ip_sigma ─────────────────────────────────
@@ -188,7 +185,6 @@ def grid_search(args):
                 vocab_size=vocab_size,
                 d_e=args.d_e, N=args.N, H=args.H,
                 spectral_radius=args.spectral_radius,
-                leaking_rate=alpha,
             ).to(device)
 
             pretrain_reservoir_ip(
@@ -219,7 +215,7 @@ def grid_search(args):
             print(f"  sigma={sigma} | IP val={val_ip:.4f}  ({t_ip:.0f}s)  diff={diff:+.4f}  {winner}")
 
             results.append({
-                "lr": lr, "ip_sigma": sigma, "leaking_rate": alpha,
+                "lr": lr, "ip_sigma": sigma,
                 "val_base": val_base, "val_ip": val_ip, "diff": diff,
             })
 
@@ -227,18 +223,18 @@ def grid_search(args):
     print("\n" + "=" * 70)
     print("RESULTS SUMMARY")
     print("=" * 70)
-    header = f"{'lr':>8}  {'sigma':>7}  {'leak':>6}  {'base':>8}  {'ip':>8}  {'Δ(base-ip)':>12}  winner"
+    header = f"{'lr':>8}  {'sigma':>7}  {'base':>8}  {'ip':>8}  {'Δ(base-ip)':>12}  winner"
     print(header)
     print("-" * len(header))
     for r in sorted(results, key=lambda x: x["val_ip"]):
         winner = "IP ✓" if r["diff"] > 0 else "Base"
-        print(f"  {r['lr']:6.0e}  {r['ip_sigma']:7.2f}  {r['leaking_rate']:6.2f}"
+        print(f"  {r['lr']:6.0e}  {r['ip_sigma']:7.2f}"
               f"  {r['val_base']:8.4f}  {r['val_ip']:8.4f}  {r['diff']:+12.4f}  {winner}")
 
     best_ip   = min(results, key=lambda x: x["val_ip"])
     best_base = min(results, key=lambda x: x["val_base"])
-    print(f"\n  Best IP   config : lr={best_ip['lr']:.0e}  sigma={best_ip['ip_sigma']}  leak={best_ip['leaking_rate']}  → val={best_ip['val_ip']:.4f}")
-    print(f"  Best Base config : lr={best_base['lr']:.0e}  sigma=—  leak={best_base['leaking_rate']}  → val={best_base['val_base']:.4f}")
+    print(f"\n  Best IP   config : lr={best_ip['lr']:.0e}  sigma={best_ip['ip_sigma']}  → val={best_ip['val_ip']:.4f}")
+    print(f"  Best Base config : lr={best_base['lr']:.0e}  sigma=—  → val={best_base['val_base']:.4f}")
 
     # ── Save JSON ───────────────────────────────────────────────────────────
     out_json = os.path.join(os.path.dirname(os.path.abspath(__file__)), "grid_results.json")
@@ -253,56 +249,54 @@ def grid_search(args):
         import matplotlib.pyplot as plt
         import matplotlib.colors as mcolors
 
-        for lr_val in grid_lr:
-            subset = [r for r in results if r["lr"] == lr_val]
-            sigmas  = sorted(set(r["ip_sigma"]     for r in subset))
-            alphas  = sorted(set(r["leaking_rate"] for r in subset))
+        # Sort the axes
+        sigmas = sorted(set(r["ip_sigma"] for r in results))
+        lrs    = sorted(set(r["lr"]       for r in results))
 
-            # Build 2D arrays
-            base_grid = np.zeros((len(alphas), len(sigmas)))
-            ip_grid   = np.zeros((len(alphas), len(sigmas)))
-            diff_grid = np.zeros((len(alphas), len(sigmas)))
-            for r in subset:
-                ai = alphas.index(r["leaking_rate"])
-                si = sigmas.index(r["ip_sigma"])
-                base_grid[ai, si] = r["val_base"]
-                ip_grid[ai, si]   = r["val_ip"]
-                diff_grid[ai, si] = r["diff"]
+        # Build 2D arrays (lrs x sigmas)
+        base_grid = np.zeros((len(lrs), len(sigmas)))
+        ip_grid   = np.zeros((len(lrs), len(sigmas)))
+        diff_grid = np.zeros((len(lrs), len(sigmas)))
+        for r in results:
+            li = lrs.index(r["lr"])
+            si = sigmas.index(r["ip_sigma"])
+            base_grid[li, si] = r["val_base"]
+            ip_grid[li, si]   = r["val_ip"]
+            diff_grid[li, si] = r["diff"]
 
-            fig, axes = plt.subplots(1, 3, figsize=(16, 5))
-            fig.suptitle(
-                f"Grid Search — lr={lr_val:.0e}, max_steps={args.max_steps}\n"
-                f"Val loss ↓ is better  |  Δ = base − ip (green = IP wins)",
-                fontsize=12, fontweight="bold",
-            )
+        fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+        fig.suptitle(
+            f"Grid Search — max_steps={args.max_steps}\n"
+            f"Val loss ↓ is better  |  Δ = base − ip (green = IP wins)",
+            fontsize=12, fontweight="bold",
+        )
 
-            def _heatmap(ax, data, title, cmap, fmt=".4f"):
-                im = ax.imshow(data, cmap=cmap, aspect="auto")
-                ax.set_xticks(range(len(sigmas)));  ax.set_xticklabels([f"{s}" for s in sigmas])
-                ax.set_yticks(range(len(alphas)));  ax.set_yticklabels([f"{a}" for a in alphas])
-                ax.set_xlabel("ip_sigma");  ax.set_ylabel("leaking_rate")
-                ax.set_title(title)
-                plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-                for (row, col), val in np.ndenumerate(data):
-                    ax.text(col, row, f"{val:{fmt}}", ha="center", va="center",
-                            fontsize=8, color="white" if abs(val) > 0.5 * data.max() else "black")
+        def _heatmap(ax, data, title, cmap, fmt=".4f"):
+            im = ax.imshow(data, cmap=cmap, aspect="auto")
+            ax.set_xticks(range(len(sigmas)));  ax.set_xticklabels([f"{s}" for s in sigmas])
+            ax.set_yticks(range(len(lrs)));     ax.set_yticklabels([f"{l:.0e}" for l in lrs])
+            ax.set_xlabel("ip_sigma");  ax.set_ylabel("lr")
+            ax.set_title(title)
+            plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+            for (row, col), val in np.ndenumerate(data):
+                ax.text(col, row, f"{val:{fmt}}", ha="center", va="center",
+                        fontsize=8, color="white" if abs(val) > 0.5 * data.max() else "black")
 
-            _heatmap(axes[0], base_grid, "Base model val loss", "Blues_r")
-            _heatmap(axes[1], ip_grid,   "IP model val loss",   "Blues_r")
-            # Diverging colormap: green = IP better, red = base better
-            vmax = np.abs(diff_grid).max() + 1e-6
-            _heatmap(axes[2], diff_grid, "Δ val loss (base − ip)\nGreen = IP wins",
-                     mcolors.LinearSegmentedColormap.from_list("rg", ["#d73027", "#ffffbf", "#1a9850"]),
-                     fmt="+.4f")
-            axes[2].images[0].set_clim(-vmax, vmax)
+        _heatmap(axes[0], base_grid, "Base model val loss", "Blues_r")
+        _heatmap(axes[1], ip_grid,   "IP model val loss",   "Blues_r")
+        # Diverging colormap: green = IP better, red = base better
+        vmax = np.abs(diff_grid).max() + 1e-6
+        _heatmap(axes[2], diff_grid, "Δ val loss (base − ip)\nGreen = IP wins",
+                 mcolors.LinearSegmentedColormap.from_list("rg", ["#d73027", "#ffffbf", "#1a9850"]),
+                 fmt="+.4f")
+        axes[2].images[0].set_clim(-vmax, vmax)
 
-            plt.tight_layout()
-            suffix = f"_lr{lr_val:.0e}".replace("-", "m")
-            out_plot = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                    f"grid_heatmap{suffix}.png")
-            plt.savefig(out_plot, dpi=150, bbox_inches="tight")
-            plt.close()
-            print(f"  Heatmap saved to {out_plot}")
+        plt.tight_layout()
+        out_plot = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "grid_heatmap.png")
+        plt.savefig(out_plot, dpi=150, bbox_inches="tight")
+        plt.close()
+        print(f"  Heatmap saved to {out_plot}")
 
     except ImportError:
         print("  (matplotlib not available — skipping plots)")
@@ -346,14 +340,11 @@ def main():
     parser.add_argument("--ip_sigmas", type=float, nargs="+",
                         default=[0.3, 0.5, 0.7],
                         help="ip_sigma values to sweep")
-    parser.add_argument("--leaking_rates", type=float, nargs="+",
-                        default=[0.5, 0.7, 0.9],
-                        help="leaking_rate values to sweep")
     parser.add_argument("--lrs", type=float, nargs="+",
                         default=[3e-4, 1e-3, 3e-3],
                         help="LR values to sweep (only active with --grid_lr)")
     parser.add_argument("--grid_lr", action="store_true",
-                        help="Include lr as a third grid axis")
+                        help="Include lr as a grid axis")
 
     args = parser.parse_args()
     grid_search(args)

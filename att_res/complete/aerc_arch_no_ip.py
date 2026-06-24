@@ -76,13 +76,12 @@ class AERC(nn.Module):
         self,
         vocab_size: int,
         d_e: int = 16,
-        N: int = 130,
-        H: int = 38,
+        N: int = 160,
+        H: int = 30,
         spectral_radius: float = 0.95,
         fb_scaling: float = 0.0,
-        dropout: float = 0.0,
         leaking_rate: float = 1.0,
-        activation: str = "silu",
+        activation: str = "tanh",
     ):
         _VALID = ("silu", "tanh", "relu")
         if activation not in _VALID:
@@ -95,7 +94,6 @@ class AERC(nn.Module):
         self.spectral_radius = spectral_radius
         self.leaking_rate = leaking_rate
         self.activation = activation
-        self.dropout = nn.Dropout(p=dropout)
 
         # Fixed random input embedding
         self.emb = nn.Embedding(vocab_size, d_e)
@@ -144,12 +142,9 @@ class AERC(nn.Module):
 
         self.state_norm = nn.RMSNorm(N)
 
-        # Static ESN readout: norm(r) (N,) -> logits (vocab_size,)
-        self.static_head = nn.Linear(N, vocab_size)
-
-        # Trainable attention network F: [norm(r) | y_static] (N+V,) -> W_att (H, N)
+        # Trainable attention network F: [norm(r)] (N,) -> W_att (H, N)
         gate_out = H
-        self.net_gate = nn.Linear(N + vocab_size, gate_out)
+        self.net_gate = nn.Linear(N, gate_out)
         self.net_out  = nn.Linear(H, H * N)
 
         # Trainable AERC correction readout: ro (H,) -> correction Δy (V,)
@@ -168,13 +163,11 @@ class AERC(nn.Module):
             self.net_gate.requires_grad_(False)
             self.net_out.requires_grad_(False)
             self.readout.requires_grad_(False)
-            self.static_head.requires_grad_(True)
         elif phase == 2:
             self.state_norm.requires_grad_(True)
             self.net_gate.requires_grad_(True)
             self.net_out.requires_grad_(True)
             self.readout.requires_grad_(True)
-            self.static_head.requires_grad_(False)
         else:
             raise ValueError(f"phase must be 1 or 2, got {phase}")
 
@@ -229,24 +222,20 @@ class AERC(nn.Module):
         B_flat = states_flat.size(0) # B*T
 
         states_normed = self.state_norm(states_flat)     # norm neurons
-        static_logits = self.static_head(states_normed)  # base static readout
 
-        att_input = torch.cat([states_normed, static_logits], dim=-1)  # (B_flat, N+V)
-        gate = self.net_gate(att_input)                  # (B_flat, gate_out)
+        gate = self.net_gate(states_normed)              # (B_flat, gate_out)
         if self.activation == "silu":
             h1 = F.silu(gate)                            # (B_flat, H)
         elif self.activation == "tanh":
             h1 = torch.tanh(gate)                        # (B_flat, H)
         elif self.activation == "relu":
             h1 = F.relu(gate)                            # (B_flat, H)
-        h1    = self.dropout(h1)                         # (B_flat, H)
         vec   = self.net_out(h1)                         # (B_flat, H*N)
         W_att = vec.view(B_flat, self.H, self.N)         # (B_flat, H, N)
 
         ro = torch.matmul(W_att, states_flat.unsqueeze(-1)).squeeze(-1)  # (B_flat, H)
 
-        correction  = self.readout(ro)                   # (B_flat, V)  Δy
-        logits_flat = static_logits + correction           # (B_flat, V)  residual
+        logits_flat  = self.readout(ro)                  # (B_flat, V)
 
         new_shape = orig_shape[:-1] + (self.vocab_size,)
         return logits_flat.view(new_shape)

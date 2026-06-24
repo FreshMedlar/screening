@@ -16,6 +16,29 @@ def _init_reservoir(rnn: nn.RNN, spectral_radius: float) -> None:
             rnn.weight_hh_l0.mul_(spectral_radius / spectral_radius_curr)
 
 
+@torch.compile(dynamic=True)
+def _reservoir_scan_ip(
+    x: torch.Tensor,
+    h0: torch.Tensor,
+    weight_ih: torch.Tensor,
+    weight_hh: torch.Tensor,
+    bias_ih: torch.Tensor,
+    bias_hh: torch.Tensor,
+    ip_a: torch.Tensor,
+    ip_b: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Compiled reservoir scan, applying trainable node-wise gain (ip_a) and bias (ip_b).
+    """
+    h = h0
+    states = []
+    for t in range(x.shape[1]):
+        pre_act = F.linear(x[:, t, :], weight_ih, bias_ih) + F.linear(h, weight_hh, bias_hh)
+        h = torch.tanh(ip_a * pre_act + ip_b)
+        states.append(h)
+    return torch.stack(states, dim=1)
+
+
 class AERC(nn.Module):
     """
     Attention-Enhanced Reservoir Computing (AERC) with Intrinsic Plasticity (IP).
@@ -46,10 +69,9 @@ class AERC(nn.Module):
         self,
         vocab_size: int,
         d_e: int = 16,
-        N: int = 150,
-        H: int = 31,
+        N: int = 160,
+        H: int = 30,
         spectral_radius: float = 0.95,
-        leaking_rate: float = 1.0,
     ):
         super().__init__()
         self.vocab_size = vocab_size
@@ -57,7 +79,8 @@ class AERC(nn.Module):
         self.N = N
         self.H = H
         self.spectral_radius = spectral_radius
-        self.leaking_rate = leaking_rate
+        self.ip_a = nn.Parameter(torch.ones(1, N))
+        self.ip_b = nn.Parameter(torch.zeros(1, N))
 
         # Fixed random input embedding
         self.emb = nn.Embedding(vocab_size, d_e)
@@ -97,28 +120,24 @@ class AERC(nn.Module):
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
     def compute_reservoir_states(self, idx: torch.Tensor) -> torch.Tensor:
-        """Compute reservoir states, applying leaky integration when leaking_rate < 1.0."""
+        """
+        Compute reservoir states, applying gain, bias, and leaky integration
+        using the compiled _reservoir_scan_ip function.
+        """
         with torch.no_grad():
             x = self.emb(idx)  # (B, T, d_e)
 
-            if self.leaking_rate == 1.0:
-                out, _ = self.rnn(x)
-                return out
+        B, T, _ = x.shape
+        h0 = torch.zeros(B, self.N, dtype=x.dtype, device=x.device)
+        weight_ih = self.rnn.weight_ih_l0
+        weight_hh = self.rnn.weight_hh_l0
+        bias_ih = self.rnn.bias_ih_l0
+        bias_hh = self.rnn.bias_hh_l0
 
-            # Custom leaky scan: h = (1-α)*h + α*tanh(W_ih*x + W_hh*h)
-            B, T, _ = x.shape
-            h = torch.zeros(B, self.N, dtype=x.dtype, device=x.device)
-            W_ih = self.rnn.weight_ih_l0
-            W_hh = self.rnn.weight_hh_l0
-            b_ih = self.rnn.bias_ih_l0
-            b_hh = self.rnn.bias_hh_l0
-            alpha = self.leaking_rate
-            states = []
-            for t in range(T):
-                pre = F.linear(x[:, t, :], W_ih, b_ih) + F.linear(h, W_hh, b_hh)
-                h = (1.0 - alpha) * h + alpha * torch.tanh(pre)
-                states.append(h)
-            return torch.stack(states, dim=1)
+        return _reservoir_scan_ip(
+            x, h0, weight_ih, weight_hh, bias_ih, bias_hh,
+            self.ip_a, self.ip_b
+        )
 
     def forward(self, idx: torch.Tensor = None, states: torch.Tensor = None) -> torch.Tensor:
         """
@@ -138,7 +157,7 @@ class AERC(nn.Module):
         states_normed = self.state_norm(states_flat)  # (B_flat, N)
 
         # 2. Gate network (conditioned on normalized states only)
-        h1 = F.silu(self.net_gate(states_normed))     # (B_flat, H)
+        h1 = F.relu(self.net_gate(states_normed))     # (B_flat, H)
 
         # 3. Dynamic attention weights
         W_att = self.net_out(h1).view(B_flat, self.H, self.N)  # (B_flat, H, N)
@@ -159,7 +178,7 @@ def pretrain_reservoir_ip(
     batch_size: int,
     eta: float = 1e-5,
     mu: float = 0.0,
-    sigma: float = 0.5,
+    sigma: float = 0.4,
     nepochs: int = 5,
     device: str = "cuda",
 ) -> None:
@@ -188,10 +207,10 @@ def pretrain_reservoir_ip(
     model.eval()
     rnn = model.rnn
     N = model.N
-    alpha = model.leaking_rate
 
-    ip_a = torch.ones((1, N), dtype=torch.float32, device=device)
-    ip_b = torch.zeros((1, N), dtype=torch.float32, device=device)
+    # Directly update model.ip_a and model.ip_b in-place (under no_grad)
+    ip_a = model.ip_a
+    ip_b = model.ip_b
 
     W_in = rnn.weight_ih_l0   # (N, d_e)
     W_hh = rnn.weight_hh_l0   # (N, N)
@@ -226,30 +245,23 @@ def pretrain_reservoir_ip(
                 u = x[:, t, :]
                 state_pre = F.linear(u, W_in) + F.linear(last_state, W_hh)  # (B, N)
 
-                y_new = torch.tanh(ip_a * state_pre + ip_b)                  # (B, N)
-                # Apply leaky integration in the IP dynamics to match inference
-                y = (1.0 - alpha) * last_state + alpha * y_new
+                y = torch.tanh(ip_a * state_pre + ip_b)                      # (B, N)
                 last_state = y
 
                 delta_b = -eta * (
                     -(mu / (sigma**2))
-                    + (y_new / (sigma**2)) * (2.0 * (sigma**2) + 1.0 - y_new**2 + mu * y_new)
+                    + (y / (sigma**2)) * (2.0 * (sigma**2) + 1.0 - y**2 + mu * y)
                 )
                 delta_a = eta / ip_a + delta_b * state_pre
 
-                ip_b += delta_b.mean(dim=0, keepdim=True)
-                ip_a += delta_a.mean(dim=0, keepdim=True)
-                ip_a.clamp_(min=1e-4)
+                with torch.no_grad():
+                    ip_b.add_(delta_b.mean(dim=0, keepdim=True))
+                    ip_a.add_(delta_a.mean(dim=0, keepdim=True))
+                    ip_a.clamp_(min=1e-4)
 
         diff_a = torch.linalg.norm(old_a - ip_a).item()
         diff_b = torch.linalg.norm(old_b - ip_b).item()
         print(f"  Epoch {epoch+1:2d}/{nepochs} | chars [{start:,}–{end:,}] | "
               f"Δip_a: {diff_a:.6f} | Δip_b: {diff_b:.6f}")
 
-    # Fold ip_a and ip_b back into the fixed reservoir weights
-    with torch.no_grad():
-        rnn.weight_ih_l0.copy_(ip_a.T * rnn.weight_ih_l0)
-        rnn.weight_hh_l0.copy_(ip_a.T * rnn.weight_hh_l0)
-        rnn.bias_hh_l0.copy_(ip_b.squeeze(0))
-        rnn.bias_ih_l0.zero_()
-    print("IP pre-training complete. Gains and biases folded into the reservoir.")
+    print("IP pre-training complete. Model gain (ip_a) and bias (ip_b) initialized.")

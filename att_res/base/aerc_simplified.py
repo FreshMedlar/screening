@@ -38,10 +38,9 @@ class AERC(nn.Module):
         self,
         vocab_size: int,
         d_e: int = 16,
-        N: int = 150,
-        H: int = 31,
+        N: int = 160,
+        H: int = 30,
         spectral_radius: float = 0.95,
-        leaking_rate: float = 1.0,
     ):
         super().__init__()
         self.vocab_size = vocab_size
@@ -49,7 +48,6 @@ class AERC(nn.Module):
         self.N = N
         self.H = H
         self.spectral_radius = spectral_radius
-        self.leaking_rate = leaking_rate
 
         # Fixed random input embedding
         self.emb = nn.Embedding(vocab_size, d_e)
@@ -89,28 +87,11 @@ class AERC(nn.Module):
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
     def compute_reservoir_states(self, idx: torch.Tensor) -> torch.Tensor:
-        """Compute reservoir states, applying leaky integration when leaking_rate < 1.0."""
+        """Compute reservoir states using the recurrent RNN."""
         with torch.no_grad():
             x = self.emb(idx)  # (B, T, d_e)
-
-            if self.leaking_rate == 1.0:
-                out, _ = self.rnn(x)
-                return out
-
-            # Custom leaky scan: h = (1-α)*h + α*tanh(W_ih*x + W_hh*h)
-            B, T, _ = x.shape
-            h = torch.zeros(B, self.N, dtype=x.dtype, device=x.device)
-            W_ih = self.rnn.weight_ih_l0
-            W_hh = self.rnn.weight_hh_l0
-            b_ih = self.rnn.bias_ih_l0
-            b_hh = self.rnn.bias_hh_l0
-            alpha = self.leaking_rate
-            states = []
-            for t in range(T):
-                pre = F.linear(x[:, t, :], W_ih, b_ih) + F.linear(h, W_hh, b_hh)
-                h = (1.0 - alpha) * h + alpha * torch.tanh(pre)
-                states.append(h)
-            return torch.stack(states, dim=1)
+            out, _ = self.rnn(x)
+            return out
 
     def forward(self, idx: torch.Tensor = None, states: torch.Tensor = None) -> torch.Tensor:
         """
@@ -130,7 +111,7 @@ class AERC(nn.Module):
         states_normed = self.state_norm(states_flat)  # (B_flat, N)
 
         # 2. Gate network (conditioned on normalized states only)
-        h1 = F.silu(self.net_gate(states_normed))     # (B_flat, H)
+        h1 = F.relu(self.net_gate(states_normed))     # (B_flat, H)
 
         # 3. Dynamic attention weights
         W_att = self.net_out(h1).view(B_flat, self.H, self.N)  # (B_flat, H, N)

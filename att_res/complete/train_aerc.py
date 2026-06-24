@@ -87,80 +87,7 @@ def estimate_loss(model, dataloader, device, max_batches: int = 50, use_bf16: bo
     return total_loss / max(count, 1)
 
 
-@torch.no_grad()
-def fit_static_head_ridge(
-    model,
-    dataloader: torch.utils.data.DataLoader,
-    alpha: float,
-    device: str,
-    max_batches: int = 0,
-) -> None:
-    """
-    Fits model.static_head analytically via ridge regression.
-    """
-    model.eval()
-    N, V = model.N, model.vocab_size
 
-    # Bias-augmented accumulators: (N+1, N+1) and (N+1, V)
-    XtX = torch.zeros(N + 1, N + 1, device=device, dtype=torch.float64)
-    XtY = torch.zeros(N + 1, V,     device=device, dtype=torch.float64)
-
-    for i, (x, y) in enumerate(dataloader):
-        if max_batches > 0 and i >= max_batches:
-            break
-        x, y = x.to(device), y.to(device)
-
-        states        = model.compute_reservoir_states(x)         # (B, T, N)
-        states_flat   = states.reshape(-1, N)
-        states_normed = model.state_norm(states_flat).double()    # (B*T, N), float64
-
-        # Bias-augmented design matrix: (B*T, N+1)
-        ones = torch.ones(states_normed.shape[0], 1, device=device, dtype=torch.float64)
-        S    = torch.cat([states_normed, ones], dim=-1)
-
-        # One-hot targets: (B*T, V)
-        Y = F.one_hot(y.reshape(-1), num_classes=V).to(torch.float64)
-
-        # Incremental accumulation
-        XtX.addmm_(S.T, S)
-        XtY.addmm_(S.T, Y)
-
-    # Solve: (XtX + alpha*I) W = XtY
-    XtX.diagonal().add_(alpha)
-    W_aug = torch.linalg.solve(XtX, XtY).float()  # (N+1, V)
-
-    with torch.no_grad():
-        model.static_head.weight.copy_(W_aug[:N, :].T)  # (V, N)
-        model.static_head.bias.copy_(W_aug[N, :])        # (V,)
-
-    model.train()
-    w_norm = model.static_head.weight.norm().item()
-    print(f"  Ridge fit complete — alpha={alpha:.1e} | ||W||_F = {w_norm:.4f}")
-
-
-@torch.no_grad()
-def estimate_static_loss(
-    model,
-    dataloader: torch.utils.data.DataLoader,
-    device: str,
-    max_batches: int = 50,
-) -> float:
-    """Evaluates only static_head (no AERC correction) to measure the phase-1 baseline."""
-    model.eval()
-    total, count = 0.0, 0
-    for i, (x, y) in enumerate(dataloader):
-        if i >= max_batches:
-            break
-        x, y = x.to(device), y.to(device)
-        states        = model.compute_reservoir_states(x)    # (B, T, N)
-        states_flat   = states.reshape(-1, model.N)
-        states_normed = model.state_norm(states_flat)        # (B*T, N)
-        static_logits = model.static_head(states_normed)     # (B*T, V)
-        loss = F.cross_entropy(static_logits, y.reshape(-1))
-        total += loss.item()
-        count += 1
-    model.train()
-    return total / max(count, 1)
 
 
 @torch.no_grad()
@@ -215,27 +142,11 @@ def train_model(model, args, train_ds, val_ds, device, run_ip=False):
             device=device
         )
 
-    # Phase 1 — Fit static_head via ridge regression
-    chars_per_batch  = args.batch_size * args.seq_len
-    ridge_max_batches = math.ceil(args.ridge_chars / chars_per_batch)
-    print("\n" + "=" * 70)
-    print(f"Phase 1  ─  Fitting static ESN readout (Ridge Regression, ~{args.ridge_chars:,} chars)")
-    print("=" * 70)
-    fit_static_head_ridge(
-        model=model,
-        dataloader=train_loader,
-        alpha=args.ridge_alpha,
-        device=device,
-        max_batches=ridge_max_batches,
-    )
-    static_val_loss = estimate_static_loss(model, val_loader, device)
-    static_ppl = math.exp(min(static_val_loss, 20))
-    print(f"  Static baseline — val loss: {static_val_loss:.4f} | ppl: {static_ppl:.2f}")
-
-    # Phase 2 — freeze static_head, train AERC correction
+    # Train AERC attention correction and readouts
     model.set_phase(2)
     aerc_params = model.count_parameters()
-    print(f"  Phase 2 trainable parameters: {aerc_params:,}  (static_head frozen)")
+    print(f"  Trainable parameters: {aerc_params:,}")
+    static_val_loss = 0.0
 
     # Optimizer & Scheduler (over phase-2 trainable params only)
     optimizer = torch.optim.AdamW(
@@ -302,9 +213,22 @@ def train_model(model, args, train_ds, val_ds, device, run_ip=False):
                 val_loss = estimate_loss(model, val_loader, device, use_bf16=use_bf16)
                 val_losses.append((step, val_loss))
                 ppl = math.exp(min(val_loss, 20))
-                print(f"  [{name_str}] step {step:5d}/{args.max_steps} | "
-                      f"train {loss.item():.4f} | val {val_loss:.4f} | "
-                      f"ppl {ppl:.2f} | {elapsed:.1f}s")
+                if hasattr(model, "ip_a"):
+                    with torch.no_grad():
+                        mean_a = model.ip_a.mean().item()
+                        mean_b = model.ip_b.mean().item()
+                        std_a  = model.ip_a.std().item()
+                        std_b  = model.ip_b.std().item()
+                    print(f"  [{name_str}] step {step:5d}/{args.max_steps} | "
+                          f"train {loss.item():.4f} | val {val_loss:.4f} | "
+                          f"ppl {ppl:.2f} | "
+                          f"ip_a {mean_a:.4f}±{std_a:.4f} | ip_b {mean_b:.4f}±{std_b:.4f} | "
+                          f"{elapsed:.1f}s")
+                else:
+                    print(f"  [{name_str}] step {step:5d}/{args.max_steps} | "
+                          f"train {loss.item():.4f} | val {val_loss:.4f} | "
+                          f"ppl {ppl:.2f} | "
+                          f"{elapsed:.1f}s")
 
     return train_losses, val_losses, static_val_loss, aerc_params
 
@@ -336,18 +260,17 @@ def main():
     parser.add_argument("--ip_epochs", type=int, default=11, help="IP epochs")
     parser.add_argument("--ip_lr", type=float, default=1e-5, help="IP learning rate")
     parser.add_argument("--ip_mu", type=float, default=0.0, help="IP target mean")
-    parser.add_argument("--ip_sigma", type=float, default=0.2, help="IP target standard deviation")
+    parser.add_argument("--ip_sigma", type=float, default=0.4, help="IP target standard deviation")
     parser.add_argument("--ip_chars", type=int, default=10000, help="IP chars count")
     
     # ESN Reservoir & Architecture Hyperparameters
     parser.add_argument("--spectral_radius", type=float, default=0.95, help="ESN spectral radius")
     parser.add_argument("--fb_scaling", type=float, default=0.0, help="Feedback scaling")
-    parser.add_argument("--dropout", type=float, default=0.0, help="Readout network dropout")
     parser.add_argument("--leaking_rate", type=float, default=1.0, help="Leaking rate")
-    parser.add_argument("--d_e", type=int, default=32, help="Embedding dimension")
-    parser.add_argument("--N_aerc", type=int, default=55, help="Reservoir size N")
-    parser.add_argument("--H_aerc", type=int, default=51, help="Attention dimension H")
-    parser.add_argument("--activation", type=str, default="silu", choices=["silu", "tanh", "relu"])
+    parser.add_argument("--d_e", type=int, default=16, help="Embedding dimension")
+    parser.add_argument("--N_aerc", type=int, default=160, help="Reservoir size N")
+    parser.add_argument("--H_aerc", type=int, default=30, help="Attention dimension H")
+    parser.add_argument("--activation", type=str, default="tanh", choices=["silu", "tanh", "relu"])
 
     # Ridge regression (Phase 1)
     parser.add_argument("--ridge_alpha", type=float, default=1e-4, help="Ridge regularisation strength")
@@ -385,7 +308,6 @@ def main():
         H=args.H_aerc,
         spectral_radius=args.spectral_radius,
         fb_scaling=args.fb_scaling,
-        dropout=args.dropout,
         leaking_rate=args.leaking_rate,
         activation=args.activation,
     ).to(device)
@@ -424,7 +346,6 @@ def main():
         H=args.H_aerc,
         spectral_radius=args.spectral_radius,
         fb_scaling=args.fb_scaling,
-        dropout=args.dropout,
         leaking_rate=args.leaking_rate,
         activation=args.activation,
     ).to(device)
@@ -479,11 +400,7 @@ def main():
         if val_losses_no_ip:
             steps, vloss = zip(*val_losses_no_ip)
             ax.plot(steps, vloss, "s-", label=f"AERC without IP ({aerc_params_no_ip:,} params)", color="C1")
-        
-        ax.axhline(static_val_loss_ip, color="C0", linestyle="--", linewidth=1.2,
-                   label=f"Static ESN baseline with IP ({static_val_loss_ip:.4f})")
-        ax.axhline(static_val_loss_no_ip, color="C1", linestyle="--", linewidth=1.2,
-                   label=f"Static ESN baseline without IP ({static_val_loss_no_ip:.4f})")
+
         
         ax.set_xlabel("Training step")
         ax.set_ylabel("Validation loss")
