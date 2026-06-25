@@ -21,7 +21,7 @@ class AERC(nn.Module):
 
     Simplifications from the original AERC model:
     - Removed: Feedback connections (fb_scaling). No output feedback loop.
-    - Removed: Activation function choice. Hardcoded to SiLU (Swish).
+    - Removed: Activation function choice. Hardcoded to ReLU.
     - Removed: Two-phase training / Ridge regression baseline fit.
     - Removed: Dropout.
 
@@ -96,7 +96,7 @@ class AERC(nn.Module):
     def forward(self, idx: torch.Tensor = None, states: torch.Tensor = None) -> torch.Tensor:
         """
         Forward pass:
-          reservoir states → RMSNorm → static readout → gate → silu → W_att → ro → correction → logits
+          reservoir states → RMSNorm → static readout → gate → relu → W_att → ro → correction → logits
         """
         if states is None:
             assert idx is not None

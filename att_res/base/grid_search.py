@@ -39,7 +39,6 @@ import warnings, logging
 warnings.filterwarnings("ignore")
 logging.getLogger("torch._inductor").setLevel(logging.ERROR)
 
-from aerc_simplified import AERC as AERC_Base
 from aerc_ip import AERC as AERC_IP, pretrain_reservoir_ip
 from train import CharDataset, load_data, estimate_loss
 
@@ -129,112 +128,87 @@ def grid_search(args):
     print(f"  Device: {device}  bf16: {use_bf16}\n")
 
     # ── Grid definition ────────────────────────────────────────────────────
-    grid_ip_sigma     = args.ip_sigmas
-    grid_lr           = args.lrs if args.grid_lr else [args.lr]
+    grid_ip_sigma        = args.ip_sigmas if args.ip_sigmas is not None else [args.ip_sigma]
+    grid_ip_mu           = args.ip_mus if args.ip_mus is not None else [args.ip_mu]
+    grid_spectral_radius = args.spectral_radii if args.spectral_radii is not None else [args.spectral_radius]
+    grid_lr              = args.lrs if args.grid_lr else [args.lr]
 
-    # Base model only depends on lr — NOT on ip_sigma.
-    # Train it once per lr, then reuse for all ip_sigma values.
-    outer_combos = grid_lr
-    total_base   = len(outer_combos)
-    total_ip     = len(outer_combos) * len(grid_ip_sigma)
+    total_ip     = len(grid_lr) * len(grid_ip_sigma) * len(grid_ip_mu) * len(grid_spectral_radius)
 
     print("=" * 70)
-    print(f"Grid search: {total_base} base runs + {total_ip} IP runs = {total_base + total_ip} total")
-    print(f"  lr values       : {grid_lr}")
-    print(f"  ip_sigma values : {grid_ip_sigma}")
-    print(f"  max_steps       : {args.max_steps}")
+    print(f"Grid search: {total_ip} IP runs")
+    print(f"  lr values              : {grid_lr}")
+    print(f"  ip_sigma values        : {grid_ip_sigma}")
+    print(f"  ip_mu values           : {grid_ip_mu}")
+    print(f"  spectral_radius values : {grid_spectral_radius}")
+    print(f"  max_steps              : {args.max_steps}")
     print("=" * 70 + "\n")
 
     results = []
-    base_cache: dict = {}  # lr -> val_base
 
     outer_idx = 0
-    for lr in outer_combos:
+    for lr in grid_lr:
         outer_idx += 1
         print(f"{'═'*60}")
-        print(f"[outer {outer_idx}/{total_base}] lr={lr:.0e}")
+        print(f"[outer {outer_idx}/{len(grid_lr)}] lr={lr:.0e}")
 
-        # ── Base model — trained ONCE per lr ─────────────────────────────────
-        torch.manual_seed(args.seed)
-        np.random.seed(args.seed)
-        model_base = AERC_Base(
-            vocab_size=vocab_size,
-            d_e=args.d_e, N=args.N, H=args.H,
-            spectral_radius=args.spectral_radius,
-        ).to(device)
-
-        t0 = time.time()
-        val_base = run_one(
-            model_base, train_ds, val_ds,
-            lr=lr, max_steps=args.max_steps,
-            batch_size=args.batch_size, seq_len=args.seq_len,
-            weight_decay=args.weight_decay,
-            warmup=args.warmup_steps, cooldown=args.cooldown_steps,
-            grad_clip=args.grad_clip, device=device, use_bf16=use_bf16,
-        )
-        del model_base  # free VRAM before IP runs
-        t_base = time.time() - t0
-        base_cache[lr] = val_base
-        print(f"  Base  : val_loss={val_base:.4f}  ({t_base:.0f}s)")
-
-        # ── IP models — one per ip_sigma ─────────────────────────────────
+        # ── IP models — sweep sigmas, mus, and spectral radii ────────────
         for sigma in grid_ip_sigma:
-            torch.manual_seed(args.seed)
-            np.random.seed(args.seed)
-            model_ip = AERC_IP(
-                vocab_size=vocab_size,
-                d_e=args.d_e, N=args.N, H=args.H,
-                spectral_radius=args.spectral_radius,
-            ).to(device)
+            for mu in grid_ip_mu:
+                for sr in grid_spectral_radius:
+                    torch.manual_seed(args.seed)
+                    np.random.seed(args.seed)
+                    model_ip = AERC_IP(
+                        vocab_size=vocab_size,
+                        d_e=args.d_e, N=args.N, H=args.H,
+                        spectral_radius=sr,
+                    ).to(device)
 
-            pretrain_reservoir_ip(
-                model=model_ip,
-                dataset=train_ds,
-                ip_chars=args.ip_chars,
-                batch_size=args.batch_size,
-                eta=args.ip_lr,
-                mu=args.ip_mu,
-                sigma=sigma,
-                nepochs=args.ip_epochs,
-                device=device,
-            )
+                    pretrain_reservoir_ip(
+                        model=model_ip,
+                        dataset=train_ds,
+                        ip_chars=args.ip_chars,
+                        batch_size=args.batch_size,
+                        eta=args.ip_lr,
+                        mu=mu,
+                        sigma=sigma,
+                        nepochs=args.ip_epochs,
+                        device=device,
+                    )
 
-            t0 = time.time()
-            val_ip = run_one(
-                model_ip, train_ds, val_ds,
-                lr=lr, max_steps=args.max_steps,
-                batch_size=args.batch_size, seq_len=args.seq_len,
-                weight_decay=args.weight_decay,
-                warmup=args.warmup_steps, cooldown=args.cooldown_steps,
-                grad_clip=args.grad_clip, device=device, use_bf16=use_bf16,
-            )
-            del model_ip
-            t_ip = time.time() - t0
-            diff = val_base - val_ip  # positive = IP is better
-            winner = "IP ✓" if diff > 0 else "Base"
-            print(f"  sigma={sigma} | IP val={val_ip:.4f}  ({t_ip:.0f}s)  diff={diff:+.4f}  {winner}")
+                    t0 = time.time()
+                    val_ip = run_one(
+                        model_ip, train_ds, val_ds,
+                        lr=lr, max_steps=args.max_steps,
+                        batch_size=args.batch_size, seq_len=args.seq_len,
+                        weight_decay=args.weight_decay,
+                        warmup=args.warmup_steps, cooldown=args.cooldown_steps,
+                        grad_clip=args.grad_clip, device=device, use_bf16=use_bf16,
+                    )
+                    del model_ip
+                    t_ip = time.time() - t0
+                    print(f"  sigma={sigma} | mu={mu} | sr={sr} | IP val={val_ip:.4f}  ({t_ip:.0f}s)")
 
-            results.append({
-                "lr": lr, "ip_sigma": sigma,
-                "val_base": val_base, "val_ip": val_ip, "diff": diff,
-            })
+                    results.append({
+                        "lr": lr,
+                        "ip_sigma": sigma,
+                        "ip_mu": mu,
+                        "spectral_radius": sr,
+                        "val_ip": val_ip,
+                    })
 
     # ── Summary table ───────────────────────────────────────────────────────
     print("\n" + "=" * 70)
     print("RESULTS SUMMARY")
     print("=" * 70)
-    header = f"{'lr':>8}  {'sigma':>7}  {'base':>8}  {'ip':>8}  {'Δ(base-ip)':>12}  winner"
+    header = f"{'lr':>8}  {'sigma':>7}  {'mu':>6}  {'sr':>5}  {'ip':>8}"
     print(header)
     print("-" * len(header))
     for r in sorted(results, key=lambda x: x["val_ip"]):
-        winner = "IP ✓" if r["diff"] > 0 else "Base"
-        print(f"  {r['lr']:6.0e}  {r['ip_sigma']:7.2f}"
-              f"  {r['val_base']:8.4f}  {r['val_ip']:8.4f}  {r['diff']:+12.4f}  {winner}")
+        print(f"  {r['lr']:6.0e}  {r['ip_sigma']:7.2f}  {r['ip_mu']:6.2f}  {r['spectral_radius']:5.2f}  {r['val_ip']:8.4f}")
 
     best_ip   = min(results, key=lambda x: x["val_ip"])
-    best_base = min(results, key=lambda x: x["val_base"])
-    print(f"\n  Best IP   config : lr={best_ip['lr']:.0e}  sigma={best_ip['ip_sigma']}  → val={best_ip['val_ip']:.4f}")
-    print(f"  Best Base config : lr={best_base['lr']:.0e}  sigma=—  → val={best_base['val_base']:.4f}")
+    print(f"\n  Best IP   config : lr={best_ip['lr']:.0e}  sigma={best_ip['ip_sigma']}  mu={best_ip['ip_mu']}  sr={best_ip['spectral_radius']}  → val={best_ip['val_ip']:.4f}")
 
     # ── Save JSON ───────────────────────────────────────────────────────────
     out_json = os.path.join(os.path.dirname(os.path.abspath(__file__)), "grid_results.json")
@@ -242,61 +216,87 @@ def grid_search(args):
         json.dump(results, f, indent=2)
     print(f"\n  Results saved to {out_json}")
 
-    # ── Heatmaps ─────────────────────────────────────────────────────────────
+    # ── Plotting ─────────────────────────────────────────────────────────────
     try:
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
-        import matplotlib.colors as mcolors
 
-        # Sort the axes
-        sigmas = sorted(set(r["ip_sigma"] for r in results))
-        lrs    = sorted(set(r["lr"]       for r in results))
+        # Determine active sweep dimensions
+        unique_sigmas = sorted(set(r["ip_sigma"] for r in results))
+        unique_mus    = sorted(set(r["ip_mu"]    for r in results))
+        unique_lrs    = sorted(set(r["lr"]       for r in results))
+        unique_srs    = sorted(set(r["spectral_radius"] for r in results))
 
-        # Build 2D arrays (lrs x sigmas)
-        base_grid = np.zeros((len(lrs), len(sigmas)))
-        ip_grid   = np.zeros((len(lrs), len(sigmas)))
-        diff_grid = np.zeros((len(lrs), len(sigmas)))
-        for r in results:
-            li = lrs.index(r["lr"])
-            si = sigmas.index(r["ip_sigma"])
-            base_grid[li, si] = r["val_base"]
-            ip_grid[li, si]   = r["val_ip"]
-            diff_grid[li, si] = r["diff"]
+        active_dims = []
+        if len(unique_sigmas) > 1: active_dims.append(("ip_sigma", unique_sigmas))
+        if len(unique_mus) > 1:    active_dims.append(("ip_mu", unique_mus))
+        if len(unique_lrs) > 1:    active_dims.append(("lr", unique_lrs))
+        if len(unique_srs) > 1:    active_dims.append(("spectral_radius", unique_srs))
 
-        fig, axes = plt.subplots(1, 3, figsize=(16, 5))
-        fig.suptitle(
-            f"Grid Search — max_steps={args.max_steps}\n"
-            f"Val loss ↓ is better  |  Δ = base − ip (green = IP wins)",
-            fontsize=12, fontweight="bold",
-        )
+        if len(active_dims) == 2:
+            dim1_name, dim1_vals = active_dims[0]
+            dim2_name, dim2_vals = active_dims[1]
 
-        def _heatmap(ax, data, title, cmap, fmt=".4f"):
-            im = ax.imshow(data, cmap=cmap, aspect="auto")
-            ax.set_xticks(range(len(sigmas)));  ax.set_xticklabels([f"{s}" for s in sigmas])
-            ax.set_yticks(range(len(lrs)));     ax.set_yticklabels([f"{l:.0e}" for l in lrs])
-            ax.set_xlabel("ip_sigma");  ax.set_ylabel("lr")
-            ax.set_title(title)
+            # Build 2D array: dim2 (rows/y-axis) x dim1 (cols/x-axis)
+            grid = np.zeros((len(dim2_vals), len(dim1_vals)))
+            for r in results:
+                i1 = dim1_vals.index(r[dim1_name])
+                i2 = dim2_vals.index(r[dim2_name])
+                grid[i2, i1] = r["val_ip"]
+
+            fig, ax = plt.subplots(figsize=(6, 5))
+            fig.suptitle(
+                f"Grid Search (IP model only) — max_steps={args.max_steps}\n"
+                f"Val loss ↓ is better",
+                fontsize=12, fontweight="bold",
+            )
+
+            im = ax.imshow(grid, cmap="Blues_r", aspect="auto")
+            ax.set_xticks(range(len(dim1_vals)));  ax.set_xticklabels([f"{v:.2g}" if isinstance(v, float) else f"{v}" for v in dim1_vals])
+            ax.set_yticks(range(len(dim2_vals)));  ax.set_yticklabels([f"{v:.2g}" if isinstance(v, float) else f"{v}" for v in dim2_vals])
+            ax.set_xlabel(dim1_name)
+            ax.set_ylabel(dim2_name)
+            ax.set_title(f"IP model val loss ({dim2_name} vs {dim1_name})")
             plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-            for (row, col), val in np.ndenumerate(data):
-                ax.text(col, row, f"{val:{fmt}}", ha="center", va="center",
-                        fontsize=8, color="white" if abs(val) > 0.5 * data.max() else "black")
+            for (row, col), val in np.ndenumerate(grid):
+                ax.text(col, row, f"{val:.4f}", ha="center", va="center",
+                        fontsize=8, color="white" if abs(val) > 0.5 * grid.max() else "black")
 
-        _heatmap(axes[0], base_grid, "Base model val loss", "Blues_r")
-        _heatmap(axes[1], ip_grid,   "IP model val loss",   "Blues_r")
-        # Diverging colormap: green = IP better, red = base better
-        vmax = np.abs(diff_grid).max() + 1e-6
-        _heatmap(axes[2], diff_grid, "Δ val loss (base − ip)\nGreen = IP wins",
-                 mcolors.LinearSegmentedColormap.from_list("rg", ["#d73027", "#ffffbf", "#1a9850"]),
-                 fmt="+.4f")
-        axes[2].images[0].set_clim(-vmax, vmax)
+            out_plot = args.image_name
+            if not out_plot.endswith(".png"):
+                out_plot += ".png"
+            if not os.path.isabs(out_plot) and os.path.sep not in out_plot:
+                out_plot = os.path.join(os.path.dirname(os.path.abspath(__file__)), out_plot)
+            plt.tight_layout()
+            plt.savefig(out_plot, dpi=150, bbox_inches="tight")
+            plt.close()
+            print(f"  Heatmap saved to {out_plot}")
+        elif len(active_dims) == 1:
+            dim_name, dim_vals = active_dims[0]
+            # sort by dim_vals
+            sorted_results = sorted(results, key=lambda x: x[dim_name])
+            xs = [r[dim_name] for r in sorted_results]
+            ys = [r["val_ip"] for r in sorted_results]
 
-        plt.tight_layout()
-        out_plot = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                "grid_heatmap.png")
-        plt.savefig(out_plot, dpi=150, bbox_inches="tight")
-        plt.close()
-        print(f"  Heatmap saved to {out_plot}")
+            fig, ax = plt.subplots(figsize=(6, 5))
+            ax.plot(xs, ys, "o-", color="C0", linewidth=2)
+            ax.set_xlabel(dim_name)
+            ax.set_ylabel("val_ip (loss)")
+            ax.set_title(f"Sweep over {dim_name}")
+            ax.grid(True, alpha=0.3)
+
+            out_plot = args.image_name
+            if not out_plot.endswith(".png"):
+                out_plot += ".png"
+            if not os.path.isabs(out_plot) and os.path.sep not in out_plot:
+                out_plot = os.path.join(os.path.dirname(os.path.abspath(__file__)), out_plot)
+            plt.tight_layout()
+            plt.savefig(out_plot, dpi=150, bbox_inches="tight")
+            plt.close()
+            print(f"  Sweep plot saved to {out_plot}")
+        else:
+            print("  (Plotting skipped: Plotting supports exactly 1 or 2 sweep dimensions)")
 
     except ImportError:
         print("  (matplotlib not available — skipping plots)")
@@ -312,7 +312,7 @@ def main():
     parser.add_argument("--seq_len",    type=int,   default=128)
     parser.add_argument("--batch_size", type=int,   default=32)
     parser.add_argument("--max_steps",  type=int,   default=1500)
-    parser.add_argument("--lr",         type=float, default=1e-3,
+    parser.add_argument("--lr",         type=float, default=5e-3,
                         help="Fixed LR when --grid_lr is not set")
     parser.add_argument("--weight_decay", type=float, default=1e-3)
     parser.add_argument("--warmup_steps",  type=int, default=150)
@@ -325,21 +325,27 @@ def main():
                         default="cuda" if torch.cuda.is_available() else "cpu")
 
     # Architecture defaults (keep ~155k params)
-    parser.add_argument("--d_e",            type=int,   default=64)
-    parser.add_argument("--N",              type=int,   default=150)
-    parser.add_argument("--H",              type=int,   default=31)
-    parser.add_argument("--spectral_radius",type=float, default=0.99)
+    parser.add_argument("--d_e",            type=int,   default=16)
+    parser.add_argument("--N",              type=int,   default=160)
+    parser.add_argument("--H",              type=int,   default=30)
+    parser.add_argument("--spectral_radius",type=float, default=0.95)
 
     # IP fixed hyperparameters
-    parser.add_argument("--ip_epochs",  type=int,   default=8)
+    parser.add_argument("--ip_epochs",  type=int,   default=5)
     parser.add_argument("--ip_chars",   type=int,   default=10000)
     parser.add_argument("--ip_lr",      type=float, default=1e-5)
-    parser.add_argument("--ip_mu",      type=float, default=0.0)
+    parser.add_argument("--ip_mu",      type=float, default=-0.1)
+    parser.add_argument("--ip_sigma",   type=float, default=0.3)
 
     # ── Grid axes ────────────────────────────────────────────────────────
+    parser.add_argument("--image_name", type=str, required=True,
+                        help="Name of the output heatmap image file (e.g. grid_heatmap.png)")
     parser.add_argument("--ip_sigmas", type=float, nargs="+",
-                        default=[0.3, 0.5, 0.7],
-                        help="ip_sigma values to sweep")
+                        help="ip_sigma values to sweep (overrides --ip_sigma if specified)")
+    parser.add_argument("--ip_mus", type=float, nargs="+",
+                        help="ip_mu values to sweep (overrides --ip_mu if specified)")
+    parser.add_argument("--spectral_radii", type=float, nargs="+",
+                        help="spectral_radius values to sweep (overrides --spectral_radius if specified)")
     parser.add_argument("--lrs", type=float, nargs="+",
                         default=[3e-4, 1e-3, 3e-3],
                         help="LR values to sweep (only active with --grid_lr)")

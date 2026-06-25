@@ -18,7 +18,7 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 
-# Configure ROCm environment variables for consumer AMD GPU compatibility if not already set
+# ROCm environment variables
 if "HSA_OVERRIDE_GFX_VERSION" not in os.environ:
     os.environ["HSA_OVERRIDE_GFX_VERSION"] = "10.3.0"
 if "ROCM_PATH" not in os.environ:
@@ -207,8 +207,8 @@ def main():
     parser.add_argument("--lr", type=float, default=5e-3, help="Learning rate")
     parser.add_argument("--weight_decay", type=float, default=1e-3, help="Weight decay")
     parser.add_argument("--grad_clip", type=float, default=1.0, help="Gradient clipping threshold")
-    parser.add_argument("--warmup_steps", type=int, default=100, help="Warmup steps")
-    parser.add_argument("--cooldown_steps", type=int, default=200, help="Cooldown steps")
+    parser.add_argument("--warmup_steps", type=int, default=150, help="Warmup steps")
+    parser.add_argument("--cooldown_steps", type=int, default=300, help="Cooldown steps")
     parser.add_argument("--min_lr_ratio", type=float, default=0.1, help="Min LR ratio")
     parser.add_argument("--bf16", action="store_true", default=True, help="Use bfloat16")
     parser.add_argument("--no_bf16", dest="bf16", action="store_false", help="Disable bfloat16")
@@ -225,8 +225,8 @@ def main():
     # Intrinsic Plasticity (IP) Hyperparameters
     parser.add_argument("--ip_epochs", type=int, default=10, help="IP pre-training epochs")
     parser.add_argument("--ip_lr", type=float, default=1e-5, help="IP learning rate")
-    parser.add_argument("--ip_mu", type=float, default=0.0, help="IP target mean")
-    parser.add_argument("--ip_sigma", type=float, default=0.4, help="IP target std (recommended 0.4-0.6)")
+    parser.add_argument("--ip_mu", type=float, default=-0.1, help="IP target mean")
+    parser.add_argument("--ip_sigma", type=float, default=0.3, help="IP target std (recommended 0.4-0.6)")
     parser.add_argument("--ip_chars", type=int, default=10000, help="Chars per IP epoch (sequential, no repetition)")
 
     # Fast testing flag
@@ -326,7 +326,7 @@ def main():
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
         def smooth(vals, w=2):
             if len(vals) < w:
@@ -334,24 +334,29 @@ def main():
             return np.convolve(vals, np.ones(w) / w, mode="valid")
 
         # Plot training losses
-        ax.plot(smooth(base_train_losses), label="Base Train Loss", color="C0", alpha=0.4)
-        ax.plot(smooth(ip_train_losses), label="IP Train Loss", color="C1", alpha=0.4)
+        axes[0].plot(smooth(base_train_losses), label="Base Train Loss", color="C0", alpha=0.6)
+        axes[0].plot(smooth(ip_train_losses), label="IP Train Loss", color="C1", alpha=0.6)
+        axes[0].set_xlabel("Training step")
+        axes[0].set_ylabel("Cross-entropy loss")
+        axes[0].set_title("Training Loss Comparison")
+        axes[0].legend()
+        axes[0].grid(True, alpha=0.3)
 
-        # Plot validation losses
+        # Plot validation/test losses
         if base_val_losses:
             steps, base_vloss = zip(*base_val_losses)
-            ax.plot(steps, base_vloss, "o-", label="Base Val Loss", color="C0", linewidth=2)
+            axes[1].plot(steps, base_vloss, "o-", label="Base Test Loss", color="C0", linewidth=2)
         if ip_val_losses:
             steps, ip_vloss = zip(*ip_val_losses)
-            ax.plot(steps, ip_vloss, "s-", label="IP Val Loss", color="C1", linewidth=2)
+            axes[1].plot(steps, ip_vloss, "s-", label="IP Test Loss", color="C1", linewidth=2)
+        
+        axes[1].set_xlabel("Training step")
+        axes[1].set_ylabel("Cross-entropy loss")
+        axes[1].set_title("Test (Validation) Loss Comparison")
+        axes[1].legend()
+        axes[1].grid(True, alpha=0.3)
 
-        ax.set_xlabel("Training step")
-        ax.set_ylabel("Cross-entropy loss")
-        ax.set_title(f"AERC comparison: Base vs Intrinsic Plasticity ({trainable_params:,} parameters)")
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-
-        plt.suptitle("AERC Intrinsic Plasticity Comparison", fontsize=14, fontweight="bold")
+        plt.suptitle(f"AERC comparison: Base vs Intrinsic Plasticity ({trainable_params:,} parameters)", fontsize=14, fontweight="bold")
         plt.tight_layout()
         
         # Save comparison plot directly in base/ folder
