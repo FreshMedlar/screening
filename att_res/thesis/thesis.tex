@@ -53,7 +53,7 @@ One architecture that has attracted interest for sequence modeling within the cl
 Building upon the RC model there have been studies to expand its capabilities using multiple reservoirs \cite{Gallicchio2016DeepRC}, replacing the reservoir with a direct nonlinear feature-expansion model\cite{Gauthier_2021}, enforcing the Echo State Property for the reservoir connection matrix\cite{jaeger2001echo}, using leaky neurons\cite{JAEGER2007335}, feedback connections\cite{Lukosevicius2007} and Intrinsic Plasticity(IP)\cite{10.1007/11550822_11}\cite{10.1016/j.neucom.2007.12.020}.
 While these approaches have improved the base RC model, which shows state of the art results in time series applications\cite{ferte2024reservoir}, they still struggle with discrete, semantically rich data.
 
-For this reason, an Attention-Enhanced Reservoir Computing (AERC) model has been proposed \cite{köster2024attentionenhancedreservoircomputing}, using dynamically generated attention weights, greatly improving the performance of the model with discrete data while still leveraging the cheap recurrence of the fixed reservoir.
+For this reason, an Attention-Enhanced Reservoir Computing (AERC) model has been proposed \cite{koster2024attentionenhancedreservoircomputing}, using dynamically generated attention weights, greatly improving the performance of the model with discrete data while still leveraging the cheap recurrence of the fixed reservoir.
 
 In this thesis we integrate the IP mechanism in the AERC model reservoir, showing no meaningful performance improvements, and then implement gradient based finetuning for the IP bias and gain showing  downstream performance (+3\% validation loss) using a marginal number of trainable parameters (+0.3\%).
 
@@ -112,19 +112,30 @@ where $a$ and $b$ are the bias and gain added by the IP mechanism.
 This mechanism is especially useful in reservoir computing, as the reservoir is usually fixed and only governed by few hyperparameters, mostly the spectral radius. Using IP provides a principled method of improving the reservoir output without compromising the analytical training. \cite{10.1016/j.neucom.2007.12.020} demonstrated that applying IP pre-training to the reservoir consistently improved downstream performance, modfying the internal dynamics towards a more informative regime.
 
 \section{Attention-Enhanced RC}
-The Attention-Enhanced RC architecture
+The Attention-Enhanced RC architecture description
 
 
 \chapter{Methodology}
-implementation of the aerc architecture and training
+\section{AERC architecture implementation}
+% The AERC Logits generation, AdamW optimizer, and learning rate schedule.
+% rmsnorm vs identity
+The specific architecture choosen follow closely from the AERC original paper \cite{koster2024attentionenhancedreservoircomputing} where the author trained multiple architectures of variable size, with the biggest having 155000 trainable parameters. To compare the results we adopt the same architecture as described in the study, a vocabulary size of $V = 65$ based on the tiny\_shakespeare \cite{karpathy2015charRnn} dataset, an embedding dimension $d_e = 16$ and reservoir size $N$ of 160.
+The model is trained to predict the next character in a sequence by minimizing the cross-entropy loss
+$$H(y, \hat{y}) = -\sum_i y_i \log(\hat{y_i})$$
+where $\hat{y}$ are the output logits and $y$ the true label. We apply the softmax function to obtain the output probabilities (not explicitly stated in the code, Pytorch\cite{Paszke2019PyTorch} applies softmax implicitly). The training is done using backpropagation and the AdamW optimizer\cite{loshchilov2019decoupledweightdecayregularization}, a standard variant of stochastic gradient descent. Miny batches of size 32 are used for efficiency.
 
-implementation of the IP mechanism
-- unsupervised
-- supervised
+\section{IP implementation}
+% implementation of the IP mechanism
+% - unsupervised - Unsupervised information-theoretic adjustment of gain $a$ and bias $b$ to match the Gaussian target distribution.
+% - supervised fine-tuning - Comparing purely local unsupervised IP (frozen during backpropagation) vs. supervised BPTT fine-tuning of the gain and bias.
 
-description of hyperparameters sweep
+\section{IP and RMSNormalization}
+% small ablation on state normalization
+% 4-way comparison evaluating the impact of RMSNorm on model representations and convergence speed for both the Base and IP architectures.
 
-
+\section{Hyperparameter Grid Search}
+% description of hyperparameters sweep
+% search over reservoir settings (spectral radius, size $N$), attention projection sizes ($H$), and IP parameters (target mean $\mu$, standard deviation $\sigma$, and pre-training steps).
 
 \chapter{Results}
 Text for the results.

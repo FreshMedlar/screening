@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux) (preloaded format=pdflatex 2026.6.26)  27 JUN 2026 19:58
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux) (preloaded format=pdflatex 2026.6.26)  27 JUN 2026 23:04
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -491,7 +491,7 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmss' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-<sapienzalogo.pdf, id=44, 288.07625pt x 89.33376pt>
+<sapienzalogo.pdf, id=60, 288.07625pt x 89.33376pt>
 File: sapienzalogo.pdf Graphic file (type pdf)
 <use sapienzalogo.pdf>
 Package pdftex.def Info: sapienzalogo.pdf  used on input line 30.
@@ -605,21 +605,21 @@ LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
 Package rerunfilecheck Info: File `thesis.out' has not changed.
-(rerunfilecheck)             Checksum: D9965D8B94804C6E0C1EEDAC37127630;1172.
+(rerunfilecheck)             Checksum: 4D979A3034A0B9E783FAD4D7A592AF40;1903.
  ) 
 Here is how much of TeX's memory you used:
- 14553 strings out of 469515
- 232500 string characters out of 5470807
- 682596 words of memory out of 5000000
- 42766 multiletter control sequences out of 15000+600000
+ 14567 strings out of 469515
+ 232777 string characters out of 5470807
+ 685748 words of memory out of 5000000
+ 42773 multiletter control sequences out of 15000+600000
  722533 words of font info for 173 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 84i,12n,131p,1046b,580s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 84i,12n,131p,1046b,582s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/share/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmcsc10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmex10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmmi8.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr7.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr8.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmri10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmss10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmss17.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmsy8.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
-Output written on thesis.pdf (24 pages, 350852 bytes).
+Output written on thesis.pdf (24 pages, 356699 bytes).
 PDF statistics:
- 353 PDF objects out of 1000 (max. 8388607)
- 286 compressed objects within 3 object streams
- 57 named destinations out of 1000 (max. 500000)
- 57942 words of extra memory for PDF output out of 61914 (max. 10000000)
+ 387 PDF objects out of 1000 (max. 8388607)
+ 319 compressed objects within 4 object streams
+ 64 named destinations out of 1000 (max. 500000)
+ 57974 words of extra memory for PDF output out of 61914 (max. 10000000)
 

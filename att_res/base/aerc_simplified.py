@@ -19,19 +19,7 @@ class AERC(nn.Module):
     """
     Attention-Enhanced Reservoir Computing (AERC) - Base Model (No Intrinsic Plasticity).
 
-    Simplifications from the original AERC model:
-    - Removed: Feedback connections (fb_scaling). No output feedback loop.
-    - Removed: Activation function choice. Hardcoded to ReLU.
-    - Removed: Two-phase training / Ridge regression baseline fit.
-    - Removed: Dropout.
-
-    List of configurable options (optionals):
-    1. Leaking Rate (leaking_rate): RETAINED. Controls leaky integration alpha in (0, 1].
-       leaking_rate=1.0 means no leaking (standard RNN). Default: 1.0.
-    2. Spectral Radius (spectral_radius): RETAINED. Scales W_hh eigenvalue. Default: 0.95.
-    3. Embedding Dimension (d_e): RETAINED. Input character embedding size. Default: 16.
-    4. Reservoir Size (N): RETAINED. Number of reservoir neurons. Default: 147.
-    5. Attention Gate Hidden Size (H): RETAINED. Attention subspace dimension. Default: 30.
+    Original AERC model with optional RMSNorm
     """
 
     def __init__(
@@ -106,7 +94,7 @@ class AERC(nn.Module):
         states_flat = states.reshape(-1, N)
         B_flat = states_flat.size(0)
 
-        # 1. Normalize reservoir states
+        # 1. Normalize reservoir states (if RMSNorm True)
         states_normed = self.state_norm(states_flat)  # (B_flat, N)
 
         # 2. Gate network (conditioned on normalized states only)

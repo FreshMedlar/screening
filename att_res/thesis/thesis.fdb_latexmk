@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex thesis"] 1782577117.38344 "thesis.aux" "thesis.bbl" "thesis" 1782577628.75055 0
-  "./references.bib" 1782575204.32286 12414 b62289971955e3db68a12fff02343cd4 ""
+["bibtex thesis"] 1782593990.21609 "thesis.aux" "thesis.bbl" "thesis" 1782593990.83166 0
+  "./references.bib" 1782593975.65552 13666 b0d5888e65e946ef4e3f8fd045f73a2c ""
   "./sapthesis.bst" 1782035683.64449 40331 937a3ace47501f8a85703000fa77293f ""
-  "thesis.aux" 1782577628.60681 3138 92db60c7372abd98810ed5629a3f5ab0 "pdflatex"
+  "thesis.aux" 1782593990.69013 3984 3f3c78f174c6a2584950f6cbf168fd2d "pdflatex"
   (generated)
   "thesis.bbl"
   "thesis.blg"
   (rewritten before read)
-["pdflatex"] 1782577628.14853 "thesis.tex" "thesis.pdf" "thesis" 1782577628.7507 0
+["pdflatex"] 1782593990.26219 "thesis.tex" "thesis.pdf" "thesis" 1782593990.83181 0
   "/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc" 1775415801 2375 baa924870cfb487815765f9094cf3728 ""
   "/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc" 1775415801 3486 c7eadf5dcc57b3b2d11736679f6636ba ""
   "/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc" 1775415801 2405 5dcf2c1b967ee25cc46c58cd52244aed ""
@@ -142,11 +142,11 @@
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1782466130 2328189 7a52c223b1e15a647aea32f30f0bfae6 ""
   "sapienzalogo.pdf" 1782035683.64449 16467 d37335f7ce529baff3eb592202135649 ""
   "sapthesis.cls" 1782035683.64449 29748 4362e4b52ded79e45c4b15d1ecb6e5cc ""
-  "thesis.aux" 1782577628.60681 3138 92db60c7372abd98810ed5629a3f5ab0 "pdflatex"
-  "thesis.bbl" 1782577117.424 6049 ff6f40cb4dd7182afc28a23f4cf9522c "bibtex thesis"
-  "thesis.out" 1782577628.60781 1172 d9965d8b94804c6e0c1eedac37127630 "pdflatex"
-  "thesis.tex" 1782577179.72573 9702 d8230949343bfd4798054a9fe766f725 ""
-  "thesis.toc" 1782577628.60781 700 1ea5d54d05973e69f08e77513398a3af "pdflatex"
+  "thesis.aux" 1782593990.69013 3984 3f3c78f174c6a2584950f6cbf168fd2d "pdflatex"
+  "thesis.bbl" 1782593990.25892 6845 aabe11cf2bdbcc748badb0766ab09cad "bibtex thesis"
+  "thesis.out" 1782593990.69047 1903 4d979a3034a0b9e783fad4d7a592af40 "pdflatex"
+  "thesis.tex" 1782593988.33545 12219 cac76235cb0dd3703677fb967f691fab ""
+  "thesis.toc" 1782593990.69047 1038 abd27f8839eb5aa9c3657002c6935bdf "pdflatex"
   (generated)
   "thesis.aux"
   "thesis.log"

@@ -4,6 +4,10 @@
 \contentsline {section}{\numberline {2.2}Intrinsic Plasticity}{4}{section.2.2}%
 \contentsline {section}{\numberline {2.3}Attention-Enhanced RC}{5}{section.2.3}%
 \contentsline {chapter}{\numberline {3}Methodology}{7}{chapter.3}%
+\contentsline {section}{\numberline {3.1}AERC architecture implementation}{7}{section.3.1}%
+\contentsline {section}{\numberline {3.2}IP implementation}{7}{section.3.2}%
+\contentsline {section}{\numberline {3.3}IP and RMSNormalization}{7}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Hyperparameter Grid Search}{7}{section.3.4}%
 \contentsline {chapter}{\numberline {4}Results}{9}{chapter.4}%
 \contentsline {chapter}{\numberline {5}Discussion}{11}{chapter.5}%
 \contentsline {chapter}{\numberline {6}Conclusion}{13}{chapter.6}%

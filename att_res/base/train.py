@@ -125,9 +125,10 @@ def train_model(model, label, train_loader, val_loader, args, device, use_bf16):
         weight_decay=args.weight_decay,
     )
 
-    warmup_steps  = min(args.warmup_steps,  args.max_steps // 10)
-    cooldown_steps = min(args.cooldown_steps, args.max_steps // 3)
-    stable_steps  = max(args.max_steps - warmup_steps - cooldown_steps, 1)
+    # to prevent training instabilities we use warmup and cooldown phases
+    warmup_steps  = args.warmup_steps
+    cooldown_steps = args.cooldown_steps
+    stable_steps  = args.max_steps - warmup_steps - cooldown_steps
     min_lr        = args.min_lr_ratio
 
     def lr_lambda(step):

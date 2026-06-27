@@ -65,11 +65,23 @@
   \href {http://dx.doi.org/https://doi.org/10.1016/j.neunet.2007.04.016}
   {\path{doi:https://doi.org/10.1016/j.neunet.2007.04.016}}.
 
-\bibitem{köster2024attentionenhancedreservoircomputing}
+\bibitem{karpathy2015charRnn}
+\textsc{Karpathy, A.}
+\newblock char-rnn.
+\newblock \url{https://github.com/karpathy/char-rnn} (2015).
+\newblock Tiny Shakespeare dataset used in the char-rnn project.
+
+\bibitem{koster2024attentionenhancedreservoircomputing}
 \textsc{Köster, F., Kanno, K., Ohkubo, J., and Uchida, A.}
 \newblock Attention-enhanced reservoir computing (2024).
 \newblock Available from: \url{https://arxiv.org/abs/2312.16503}, \href
   {http://arxiv.org/abs/2312.16503} {\path{arXiv:2312.16503}}.
+
+\bibitem{loshchilov2019decoupledweightdecayregularization}
+\textsc{Loshchilov, I. and Hutter, F.}
+\newblock Decoupled weight decay regularization (2019).
+\newblock Available from: \url{https://arxiv.org/abs/1711.05101}, \href
+  {http://arxiv.org/abs/1711.05101} {\path{arXiv:1711.05101}}.
 
 \bibitem{Lukosevicius2007}
 \textsc{Lukosevicius, M.}
@@ -82,6 +94,14 @@
 \newblock \emph{Neural Computation}, \textbf{14} (2002), 2531.
 \newblock \href {http://dx.doi.org/10.1162/089976602760407955}
   {\path{doi:10.1162/089976602760407955}}.
+
+\bibitem{Paszke2019PyTorch}
+\textsc{Paszke, A., et~al.}
+\newblock Pytorch: An imperative style, high-performance deep learning library
+  (2019).
+\newblock Available from: \url{https://arxiv.org/abs/1912.01703}, \href
+  {http://dx.doi.org/10.48550/arXiv.1912.01703}
+  {\path{doi:10.48550/arXiv.1912.01703}}.
 
 \bibitem{peng2023rwkvreinventingrnnstransformer}
 \textsc{Peng, B., et~al.}
