@@ -41,6 +41,7 @@ class AERC(nn.Module):
         N: int = 160,
         H: int = 30,
         spectral_radius: float = 0.95,
+        use_rmsnorm: bool = False,
     ):
         super().__init__()
         self.vocab_size = vocab_size
@@ -48,6 +49,7 @@ class AERC(nn.Module):
         self.N = N
         self.H = H
         self.spectral_radius = spectral_radius
+        self.use_rmsnorm = use_rmsnorm
 
         # Fixed random input embedding
         self.emb = nn.Embedding(vocab_size, d_e)
@@ -58,22 +60,19 @@ class AERC(nn.Module):
             input_size=d_e,
             hidden_size=N,
             batch_first=True,
-            bias=True,
+            bias=False,
             nonlinearity="tanh",
         )
         self.rnn.weight_ih_l0.requires_grad = False
         self.rnn.weight_hh_l0.requires_grad = False
-        self.rnn.bias_ih_l0.requires_grad = False
-        self.rnn.bias_hh_l0.requires_grad = False
-
-        with torch.no_grad():
-            self.rnn.bias_ih_l0.zero_()
-            self.rnn.bias_hh_l0.zero_()
 
         _init_reservoir(self.rnn, spectral_radius)
 
-        # Normalization layer (trainable scale)
-        self.state_norm = nn.RMSNorm(N)
+        # Normalization layer
+        if use_rmsnorm:
+            self.state_norm = nn.RMSNorm(N)
+        else:
+            self.state_norm = nn.Identity()
 
         # Attention network: norm(r) (N,) -> W_att (H, N)
         self.net_gate = nn.Linear(N, H)

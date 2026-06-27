@@ -22,8 +22,6 @@ def _reservoir_scan_ip(
     h0: torch.Tensor,
     weight_ih: torch.Tensor,
     weight_hh: torch.Tensor,
-    bias_ih: torch.Tensor,
-    bias_hh: torch.Tensor,
     ip_a: torch.Tensor,
     ip_b: torch.Tensor,
 ) -> torch.Tensor:
@@ -33,7 +31,7 @@ def _reservoir_scan_ip(
     h = h0
     states = []
     for t in range(x.shape[1]):
-        pre_act = F.linear(x[:, t, :], weight_ih, bias_ih) + F.linear(h, weight_hh, bias_hh)
+        pre_act = F.linear(x[:, t, :], weight_ih) + F.linear(h, weight_hh)
         h = torch.tanh(ip_a * pre_act + ip_b)
         states.append(h)
     return torch.stack(states, dim=1)
@@ -45,12 +43,6 @@ class AERC(nn.Module):
 
     Identical architecture to aerc_simplified.py, but supports Intrinsic Plasticity
     reservoir pre-training via pretrain_reservoir_ip() before the main training phase.
-
-    Simplifications from the original AERC model:
-    - Removed: Feedback connections (fb_scaling). No output feedback loop.
-    - Removed: Activation function choice. Hardcoded to ReLU.
-    - Removed: Two-phase training / Ridge regression baseline fit.
-    - Removed: Dropout.
 
     List of configurable options (optionals):
     1. Leaking Rate (leaking_rate): RETAINED. Controls leaky integration alpha in (0, 1].
@@ -72,6 +64,7 @@ class AERC(nn.Module):
         N: int = 160,
         H: int = 30,
         spectral_radius: float = 0.95,
+        use_rmsnorm: bool = False,
     ):
         super().__init__()
         self.vocab_size = vocab_size
@@ -79,6 +72,7 @@ class AERC(nn.Module):
         self.N = N
         self.H = H
         self.spectral_radius = spectral_radius
+        self.use_rmsnorm = use_rmsnorm
         self.ip_a = nn.Parameter(torch.ones(1, N))
         self.ip_b = nn.Parameter(torch.zeros(1, N))
 
@@ -91,22 +85,19 @@ class AERC(nn.Module):
             input_size=d_e,
             hidden_size=N,
             batch_first=True,
-            bias=True,
+            bias=False,
             nonlinearity="tanh",
         )
         self.rnn.weight_ih_l0.requires_grad = False
         self.rnn.weight_hh_l0.requires_grad = False
-        self.rnn.bias_ih_l0.requires_grad = False
-        self.rnn.bias_hh_l0.requires_grad = False
-
-        with torch.no_grad():
-            self.rnn.bias_ih_l0.zero_()
-            self.rnn.bias_hh_l0.zero_()
 
         _init_reservoir(self.rnn, spectral_radius)
 
-        # Normalization layer (trainable scale)
-        self.state_norm = nn.RMSNorm(N)
+        # Normalization layer
+        if use_rmsnorm:
+            self.state_norm = nn.RMSNorm(N)
+        else:
+            self.state_norm = nn.Identity()
 
         # Attention network: norm(r) (N,) -> W_att (H, N)
         self.net_gate = nn.Linear(N, H)
@@ -131,11 +122,9 @@ class AERC(nn.Module):
         h0 = torch.zeros(B, self.N, dtype=x.dtype, device=x.device)
         weight_ih = self.rnn.weight_ih_l0
         weight_hh = self.rnn.weight_hh_l0
-        bias_ih = self.rnn.bias_ih_l0
-        bias_hh = self.rnn.bias_hh_l0
 
         return _reservoir_scan_ip(
-            x, h0, weight_ih, weight_hh, bias_ih, bias_hh,
+            x, h0, weight_ih, weight_hh,
             self.ip_a, self.ip_b
         )
 

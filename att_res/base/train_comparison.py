@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
-Training and comparison script for AERC Base vs AERC with Intrinsic Plasticity (IP).
+Training and comparison script for:
+1. AERC Simplified (with RMSNorm)
+2. AERC Paper (without RMSNorm)
+3. AERC with Intrinsic Plasticity (IP)
 
-Instantiates both models with identical initial weights, runs IP pre-training on the IP model,
-trains both models end-to-end via backpropagation, and plots a comparative performance graph.
+Instantiates all three models with identical initial weights (except for model-specific elements),
+runs IP pre-training on the IP model, trains all three end-to-end via backpropagation,
+and plots a comparative performance graph.
 """
 
 import os
@@ -25,7 +29,7 @@ if "ROCM_PATH" not in os.environ:
     os.environ["ROCM_PATH"] = "/opt/rocm"
 
 # Import AERC architectures
-from aerc_simplified import AERC as AERC_Base
+from aerc_simplified import AERC as AERC_Simplified
 from aerc_ip import AERC as AERC_IP, pretrain_reservoir_ip
 
 # Suppress PyTorch warnings
@@ -198,7 +202,7 @@ def train_model(model, label, train_loader, val_loader, args, device, use_bf16):
 # Main Training Loop
 # ---------------------------------------------------------------------------
 def main():
-    parser = argparse.ArgumentParser(description="Base vs Intrinsic Plasticity AERC Training")
+    parser = argparse.ArgumentParser(description="AERC Three-Way Model Comparison")
     parser.add_argument("--data", type=str,
                         default="/home/medlar/Projects/screening/att_res/tinyshakespeare.txt")
     parser.add_argument("--seq_len", type=int, default=128, help="Sequence length")
@@ -252,10 +256,22 @@ def main():
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, drop_last=True)
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, drop_last=True)
 
-    # Initialize Model A: AERC Base (without IP)
+    # Initialize Model A: AERC Simplified (with RMSNorm)
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
-    model_base = AERC_Base(
+    model_simplified = AERC_Simplified(
+        vocab_size=vocab_size,
+        d_e=args.d_e,
+        N=args.N,
+        H=args.H,
+        spectral_radius=args.spectral_radius,
+        use_rmsnorm=True,
+    ).to(device)
+
+    # Initialize Model B: AERC Paper (without RMSNorm)
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    model_paper = AERC_Simplified(
         vocab_size=vocab_size,
         d_e=args.d_e,
         N=args.N,
@@ -264,7 +280,7 @@ def main():
         use_rmsnorm=False,
     ).to(device)
 
-    # Initialize Model B: AERC IP (with IP pre-training)
+    # Initialize Model C: AERC IP (with Intrinsic Plasticity)
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
     model_ip = AERC_IP(
@@ -273,18 +289,50 @@ def main():
         N=args.N,
         H=args.H,
         spectral_radius=args.spectral_radius,
+        use_rmsnorm=True,
+    ).to(device)
+
+    # Initialize Model D: AERC IP (with Intrinsic Plasticity, without RMSNorm)
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    model_ip_no_rmsnorm = AERC_IP(
+        vocab_size=vocab_size,
+        d_e=args.d_e,
+        N=args.N,
+        H=args.H,
+        spectral_radius=args.spectral_radius,
         use_rmsnorm=False,
     ).to(device)
 
-    trainable_params = model_base.count_parameters()
+    # Copy identical initialization weights for all common layers
+    with torch.no_grad():
+        for target_model in [model_paper, model_ip, model_ip_no_rmsnorm]:
+            target_model.emb.weight.copy_(model_simplified.emb.weight)
+            target_model.rnn.weight_ih_l0.copy_(model_simplified.rnn.weight_ih_l0)
+            target_model.rnn.weight_hh_l0.copy_(model_simplified.rnn.weight_hh_l0)
+            target_model.net_gate.weight.copy_(model_simplified.net_gate.weight)
+            target_model.net_gate.bias.copy_(model_simplified.net_gate.bias)
+            target_model.net_out.weight.copy_(model_simplified.net_out.weight)
+            target_model.net_out.bias.copy_(model_simplified.net_out.bias)
+            target_model.readout.weight.copy_(model_simplified.readout.weight)
+            target_model.readout.bias.copy_(model_simplified.readout.bias)
+
+    params_simp = model_simplified.count_parameters()
+    params_paper = model_paper.count_parameters()
+    params_ip = model_ip.count_parameters()
+    params_ip_no_rmsnorm = model_ip_no_rmsnorm.count_parameters()
+    
     print("\n" + "=" * 70)
-    print("AERC Comparison Setup:")
-    print(f"  Trainable Parameters: {trainable_params:,} per model")
+    print("AERC Four-Way Model Comparison Setup:")
+    print(f"  Model A (Base, with RMSNorm) Trainable Parameters:    {params_simp:,}")
+    print(f"  Model B (Base, no RMSNorm) Trainable Parameters:      {params_paper:,}")
+    print(f"  Model C (IP, with RMSNorm) Trainable Parameters:      {params_ip:,}")
+    print(f"  Model D (IP, no RMSNorm) Trainable Parameters:        {params_ip_no_rmsnorm:,}")
     print(f"  Config: d_e={args.d_e}, N={args.N}, H={args.H}, SR={args.spectral_radius}")
     print("=" * 70)
 
-    # Pre-train Model B (IP) — each epoch uses a new sequential slice of ip_chars characters
-    print("\nStarting Intrinsic Plasticity (IP) Pre-training for Model B...")
+    # Pre-train Model C (IP)
+    print("\nStarting Intrinsic Plasticity (IP) Pre-training for Model C (with RMSNorm)...")
     print("-" * 70)
     pretrain_reservoir_ip(
         model=model_ip,
@@ -298,28 +346,59 @@ def main():
         device=device,
     )
 
+    # Pre-train Model D (IP without RMSNorm)
+    print("\nStarting Intrinsic Plasticity (IP) Pre-training for Model D (no RMSNorm)...")
+    print("-" * 70)
+    pretrain_reservoir_ip(
+        model=model_ip_no_rmsnorm,
+        dataset=train_ds,
+        ip_chars=args.ip_chars,
+        batch_size=args.batch_size,
+        eta=args.ip_lr,
+        mu=args.ip_mu,
+        sigma=args.ip_sigma,
+        nepochs=args.ip_epochs,
+        device=device,
+    )
+
     use_bf16 = args.bf16 and device.startswith("cuda")
 
-    # Train Model A (Base)
-    base_train_losses, base_val_losses = train_model(
-        model_base, "AERC Base (No IP)", train_loader, val_loader, args, device, use_bf16
+    # Train Model A (Simplified)
+    simp_train_losses, simp_val_losses = train_model(
+        model_simplified, "AERC Simplified (With RMSNorm)", train_loader, val_loader, args, device, use_bf16
     )
 
-    # Train Model B (IP)
+    # Train Model B (Paper)
+    paper_train_losses, paper_val_losses = train_model(
+        model_paper, "AERC Paper (No RMSNorm)", train_loader, val_loader, args, device, use_bf16
+    )
+
+    # Train Model C (IP)
     ip_train_losses, ip_val_losses = train_model(
-        model_ip, "AERC with Intrinsic Plasticity", train_loader, val_loader, args, device, use_bf16
+        model_ip, "AERC with Intrinsic Plasticity (IP, With RMSNorm)", train_loader, val_loader, args, device, use_bf16
     )
 
-    # Generate samples from both
+    # Train Model D (IP, No RMSNorm)
+    ip_no_norm_train_losses, ip_no_norm_val_losses = train_model(
+        model_ip_no_rmsnorm, "AERC with Intrinsic Plasticity (IP, No RMSNorm)", train_loader, val_loader, args, device, use_bf16
+    )
+
+    # Generate samples from all four
     print("\n" + "=" * 70)
     print("Generated text comparisons:")
     print("-" * 70)
     seed_text = "ROMEO:\n"
-    print("AERC Base (No IP):")
-    print(seed_text + generate(model_base, chars, seed_text, args.seq_len, device=device))
+    print("AERC Simplified (With RMSNorm):")
+    print(seed_text + generate(model_simplified, chars, seed_text, args.seq_len, device=device))
     print("-" * 40)
-    print("AERC with Intrinsic Plasticity:")
+    print("AERC Paper (No RMSNorm):")
+    print(seed_text + generate(model_paper, chars, seed_text, args.seq_len, device=device))
+    print("-" * 40)
+    print("AERC with Intrinsic Plasticity (IP, With RMSNorm):")
     print(seed_text + generate(model_ip, chars, seed_text, args.seq_len, device=device))
+    print("-" * 40)
+    print("AERC with Intrinsic Plasticity (IP, No RMSNorm):")
+    print(seed_text + generate(model_ip_no_rmsnorm, chars, seed_text, args.seq_len, device=device))
     print("=" * 70)
 
     # Plotting comparisons
@@ -330,14 +409,16 @@ def main():
 
         fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-        def smooth(vals, w=2):
+        def smooth(vals, w=5):
             if len(vals) < w:
                 return vals
             return np.convolve(vals, np.ones(w) / w, mode="valid")
 
         # Plot training losses
-        axes[0].plot(smooth(base_train_losses), label="Base Train Loss", color="C0", alpha=0.6)
-        axes[0].plot(smooth(ip_train_losses), label="IP Train Loss", color="C1", alpha=0.6)
+        axes[0].plot(smooth(simp_train_losses), label="Base (with RMSNorm)", color="C0", alpha=0.6)
+        axes[0].plot(smooth(paper_train_losses), label="Base (no RMSNorm)", color="C1", alpha=0.6)
+        axes[0].plot(smooth(ip_train_losses), label="IP (with RMSNorm)", color="C2", alpha=0.6)
+        axes[0].plot(smooth(ip_no_norm_train_losses), label="IP (no RMSNorm)", color="C3", alpha=0.6)
         axes[0].set_xlabel("Training step")
         axes[0].set_ylabel("Cross-entropy loss")
         axes[0].set_title("Training Loss Comparison")
@@ -345,12 +426,18 @@ def main():
         axes[0].grid(True, alpha=0.3)
 
         # Plot validation/test losses
-        if base_val_losses:
-            steps, base_vloss = zip(*base_val_losses)
-            axes[1].plot(steps, base_vloss, "o-", label="Base Test Loss", color="C0", linewidth=2)
+        if simp_val_losses:
+            steps, simp_vloss = zip(*simp_val_losses)
+            axes[1].plot(steps, simp_vloss, "o-", label="Base (with RMSNorm) Test", color="C0", linewidth=2)
+        if paper_val_losses:
+            steps, paper_vloss = zip(*paper_val_losses)
+            axes[1].plot(steps, paper_vloss, "s-", label="Base (no RMSNorm) Test", color="C1", linewidth=2)
         if ip_val_losses:
             steps, ip_vloss = zip(*ip_val_losses)
-            axes[1].plot(steps, ip_vloss, "s-", label="IP Test Loss", color="C1", linewidth=2)
+            axes[1].plot(steps, ip_vloss, "d-", label="IP (with RMSNorm) Test", color="C2", linewidth=2)
+        if ip_no_norm_val_losses:
+            steps, ip_no_norm_vloss = zip(*ip_no_norm_val_losses)
+            axes[1].plot(steps, ip_no_norm_vloss, "x-", label="IP (no RMSNorm) Test", color="C3", linewidth=2)
         
         axes[1].set_xlabel("Training step")
         axes[1].set_ylabel("Cross-entropy loss")
@@ -358,15 +445,82 @@ def main():
         axes[1].legend()
         axes[1].grid(True, alpha=0.3)
 
-        plt.suptitle(f"AERC comparison: Base vs Intrinsic Plasticity ({trainable_params:,} parameters)", fontsize=14, fontweight="bold")
+        plt.suptitle("AERC Comparison: Base vs Intrinsic Plasticity (IP) with & without RMSNorm", fontsize=14, fontweight="bold")
         plt.tight_layout()
         
-        # Save comparison plot directly in base/ folder
-        out_path = os.path.join(os.path.dirname(__file__), "aerc_ip_comparison.png")
+        out_path = os.path.join(os.path.dirname(__file__), "aerc_four_way_comparison.png")
         plt.savefig(out_path, dpi=150)
         print(f"\n✓ Comparison plot saved directly to {out_path}")
+
+        # -------------------------------------------------------------
+        # Generate Comparison Table Image
+        # -------------------------------------------------------------
+        fig_tbl, ax_tbl = plt.subplots(figsize=(10, 4))
+        ax_tbl.axis('off')
+        
+        # Calculate final validation losses
+        vloss_simp = simp_val_losses[-1][1] if simp_val_losses else 0.0
+        vloss_paper = paper_val_losses[-1][1] if paper_val_losses else 0.0
+        vloss_ip = ip_val_losses[-1][1] if ip_val_losses else 0.0
+        vloss_ip_no_norm = ip_no_norm_val_losses[-1][1] if ip_no_norm_val_losses else 0.0
+        
+        # Calculate final perplexities
+        ppl_simp = math.exp(min(vloss_simp, 20))
+        ppl_paper = math.exp(min(vloss_paper, 20))
+        ppl_ip = math.exp(min(vloss_ip, 20))
+        ppl_ip_no_norm = math.exp(min(vloss_ip_no_norm, 20))
+        
+        models = [
+            "Base (with RMSNorm)",
+            "Base (no RMSNorm) [Baseline]",
+            "IP (with RMSNorm)",
+            "IP (no RMSNorm)"
+        ]
+        
+        losses = [vloss_simp, vloss_paper, vloss_ip, vloss_ip_no_norm]
+        ppls = [ppl_simp, ppl_paper, ppl_ip, ppl_ip_no_norm]
+        
+        table_data = [["Model", "Val Loss", "Val PPL", "Abs Diff (Loss)", "% Diff (Loss)"]]
+        
+        for name, l, p in zip(models, losses, ppls):
+            abs_diff = l - vloss_paper
+            pct_diff = (abs_diff / vloss_paper * 100) if vloss_paper != 0 else 0.0
+            
+            abs_str = f"{abs_diff:+.4f}" if "Baseline" not in name else "-"
+            pct_str = f"{pct_diff:+.2f}%" if "Baseline" not in name else "-"
+            
+            table_data.append([
+                name,
+                f"{l:.4f}",
+                f"{p:.2f}",
+                abs_str,
+                pct_str
+            ])
+            
+        tbl = ax_tbl.table(
+            cellText=table_data, 
+            loc='center', 
+            cellLoc='center',
+            colWidths=[0.35, 0.15, 0.15, 0.18, 0.17]
+        )
+        tbl.auto_set_font_size(False)
+        tbl.set_fontsize(11)
+        tbl.scale(1.2, 1.8)
+        
+        # Bold the header cells
+        for (row, col), cell in tbl.get_celld().items():
+            if row == 0:
+                cell.set_text_props(weight='bold')
+                
+        plt.title("AERC Model Performance Comparison Table", fontsize=14, fontweight="bold", pad=20)
+        plt.tight_layout()
+        
+        tbl_path = os.path.join(os.path.dirname(__file__), "aerc_comparison_table.png")
+        plt.savefig(tbl_path, dpi=150)
+        print(f"✓ Comparison table saved directly to {tbl_path}")
+
     except ImportError:
-        print("\n⚠ matplotlib not installed — skipping plot.")
+        print("\n⚠ matplotlib not installed — skipping plot and table generation.")
 
 
 if __name__ == "__main__":

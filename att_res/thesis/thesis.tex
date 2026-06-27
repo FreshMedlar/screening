@@ -27,18 +27,18 @@
 % --- Front Matter (Title Page, Dedication, Abstract, TOC) ---
 \frontmatter
 \maketitle
-\dedication{Dedicated to\\ my family and my friends.}
+\dedication{Dedicated to\\ my family and friends.}
 
 \begin{abstract}
-While the Transformer architecture has dominated the machine learning field 
-this decade, there is a growing search for more efficient architectures 
-during both training and inference. Reservoir computing, while remaining a 
-strong class of models for time series prediction, struggles with discrete data 
-like text. Attention-enhanced reservoir computing (AERC) tries to overcome 
-this limitation using attention only on a fixed size reservoir, avoiding a 
-growing KV cache. In this paper, we integrate Intrinsic Plasticity to the 
-fixed reservoir to improve the AERC architecture and test it on a 
-wider set of tasks. We find TODO 
+    While the Transformer architecture has dominated the machine learning field
+    this decade, there is a growing search for more efficient architectures
+    during both training and inference. Reservoir computing, while remaining a
+    strong class of models for time series prediction, struggles with discrete data
+    like text. Attention-enhanced reservoir computing (AERC) tries to overcome
+    this limitation using attention only on a fixed size reservoir, avoiding a
+    growing KV cache. In this paper, we integrate Intrinsic Plasticity to the
+    fixed reservoir to improve the AERC architecture and test it on a
+    wider set of tasks. We find TODO
 \end{abstract}
 
 \tableofcontents
@@ -46,34 +46,91 @@ wider set of tasks. We find TODO
 % --- Main Matter (Chapters) ---
 \mainmatter
 \chapter{Introduction}
-In recent years there has been a growing search for efficient, subquadratic alternatives to Transformer, to make training and inference cheaper. The main approaches use a lighter variant of attention, such as Native Sparse Attention \cite{yuan-etal-2025-native}, or a linear architecture, such as Mamba\cite{gu2024mambalineartimesequencemodeling} or RWKV\cite{peng2023rwkvreinventingrnnstransformer}. 
+In recent years there has been a growing search for efficient, subquadratic alternatives to Transformer, to make training and inference cheaper. The main approaches use a lighter variant of attention, such as Native Sparse Attention \cite{yuan-etal-2025-native}, or linear, recurrent architectures, such as Mamba\cite{gu2024mambalineartimesequencemodeling} or RWKV\cite{peng2023rwkvreinventingrnnstransformer}.
 
-One architecture that has attracted interest for sequence modeling within the class of recurrent neural networks is the Reservoir Computing (RC) model\cite{jaeger2001echo}, which uses a fixed recurrent reservoir for non-linear temporal expansion of the inputs, and a linear layer to extract meaning for the high-dimensional data.
-Reservoir Computing models, while showing state of the art results in time series applications, struggle with discrete data, and have been therefore ignored for text autoregression. The promising aspects of RC are in the fixed, recurrent, non-linear reservoir and the trainable linear output layer, which can be trained using Ridge Regression. In addition, the use of a physical reservoir makes this process even more efficient, while increasing the capabilities of the model\cite{Brunner2013ParallelPI}.
+One architecture that has attracted interest for sequence modeling within the class of recurrent neural networks is the Reservoir Computing (RC) model as defined in \cite{10.1016/j.neucom.2007.12.020}, discovered independently by Jaeger\cite{jaeger2001echo} and Maass\cite{Maass}, which uses a fixed recurrent reservoir for non-linear temporal expansion of the inputs, and a linear layer to extract meaning for the high-dimensional data. The promising aspects of RC are in the fixed, recurrent, non-linear reservoir and the trainable linear output layer, which can be trained using Ridge Regression. In addition, the use of a physical reservoir makes this process even more efficient, while increasing the capabilities of the model\cite{Brunner2013ParallelPI}.
 
-Building upon the RC model there have been studies to expand its capabilities using multiple reservoirs \cite{Gallicchio2016DeepRC}, replacing the reservoir with a direct nonlinear feature-expansion model\cite{Gauthier_2021}, enforcing the Echo State Property for the reservoir connection matrix\cite{jaeger2001echo}, using leaky neurons\cite{JAEGER2007335}, feedback connections\cite{Lukosevicius2007} and Intrinsic Plasticity(IP)\cite{10.1016/j.neucom.2007.12.020}.
-While these approaches have improved the base RC model, they still struggle with discrete data. 
+Building upon the RC model there have been studies to expand its capabilities using multiple reservoirs \cite{Gallicchio2016DeepRC}, replacing the reservoir with a direct nonlinear feature-expansion model\cite{Gauthier_2021}, enforcing the Echo State Property for the reservoir connection matrix\cite{jaeger2001echo}, using leaky neurons\cite{JAEGER2007335}, feedback connections\cite{Lukosevicius2007} and Intrinsic Plasticity(IP)\cite{10.1007/11550822_11}\cite{10.1016/j.neucom.2007.12.020}.
+While these approaches have improved the base RC model, which shows state of the art results in time series applications\cite{ferte2024reservoir}, they still struggle with discrete, semantically rich data.
 
 For this reason, an Attention-Enhanced Reservoir Computing (AERC) model has been proposed \cite{köster2024attentionenhancedreservoircomputing}, using dynamically generated attention weights, greatly improving the performance of the model with discrete data while still leveraging the cheap recurrence of the fixed reservoir.
 
-In this thesis we:
-- integrate IP in the AERC model
-
-
-
-
+In this thesis we integrate the IP mechanism in the AERC model reservoir, showing no meaningful performance improvements, and then implement gradient based finetuning for the IP bias and gain showing  downstream performance (+3\% validation loss) using a marginal number of trainable parameters (+0.3\%).
 
 \chapter{Literature Review}
-Text for the literature review.
+\section{Reservoir Computing}
+Models in the Reservoir Computing\cite{jaeger2001echo} family follow a simple structure, which is composed of:
+\begin{enumerate}
+    \item an input layer $\mathbf{W}_{in}$ that randomly projects input $\mathbf{x}_t$ in the reservoir and is not trained
+    \item a reservoir described whose dynamics are described by the adjacency matrix $\mathbf{W}_r$ which is not trained
+    \item a trained readout $\mathbf{W}_{out}$ which uses the reservoir states $r_i$ to predict the next state $r_{i+1}$
+\end{enumerate}
+The internal dynamics of the reservoir can then be described by the function:
+
+$$\mathbf{h}_t = \tanh(\mathbf{W}_{in} \mathbf{x}_t + \mathbf{W}_r \mathbf{h}_{t-1})$$
+
+The vector $\mathbf{h}_t$ is then used to express the output $\mathbf{y}_{t+1}$ using a linear transformation
+
+$$\mathbf{y}_{t+1} = \mathbf{W}_{out} \mathbf{h}_t$$
+
+and $W_{out}$ is trained in a supervised (or self-supervised) way using least-square regression with Tihkonov regularization, commonly called ridge regression
+
+$$\min_\beta \|y - x\beta\|^2 + \lambda \|\beta\|^2$$
+
+Using an analytic solution is an extremely compelling part of RC, using computational resources and data more efficiently, and making the model more stable both during training and deployment, especially for long term behaviors like modeling a chaotic time-series. It also guarantee good generalization and simpler, faster training iterations.
+
+
+\section{Intrinsic Plasticity}
+The Intrinsic Plasticity (IP) mechanism, first introduced in \cite{10.1007/11550822_11}, takes inpiration from a biological phenomenon called {\it homeostatic plasticity}, through which neurons autonomously adapt to stimuli. It is shown that neurons with an exponential firing rate distribution maximize information flow, and therefore neurons try to match such a distribution in-between their biological constraints.
+As a biological learning rule it differs from other commonly known phenomenon such as hebbian learning and synaptic plasticity because it modify the neuron properties rather than its connections (synapses) as shown in \cite{destexhe2004plasticity}.
+
+The objective of the IP learning rule is the maximization of entropy in the neuron output distribution, which is equivalent to the maximization of information flowing through it. Because we use the hyperbolic tangent nonlinearity, this means pushing neurons output towards a gaussian distribution
+$$p_{\text{norm}}(y) = \frac{1}{\sqrt{2\pi}\sigma} \exp\left(-\frac{(y-\mu)^2}{2\sigma^2}\right)$$
+of mean $\mu$, which is an hyperparameter.
+
+The Gaussian is the maximum-entropy distribution under a fixed mean and variance constraint, making it a principled target for neurons whose output is bounded in $[-1, 1]$. The IP rule achieves this by locally adapting two per-neuron parameters: a gain $a$, which controls the slope of the activation function, and a bias $b$, which shifts its operating point. The adaptation is performed online by minimizing the Kullback--Leibler divergence $D_{\text{KL}}(\tilde{p} \parallel p_{\text{norm}})$ between the empirical output distribution $\tilde{p}(y)$ and the desired Gaussian target, via stochastic gradient descent.
+
+The derived learning rules from~\cite{10.1016/j.neucom.2007.12.020} to obtain this objective are
+$$
+    \Delta b = \eta \left(1 - \left(2 + \frac{1}{\mu}\right)y + \frac{y^2}{\mu}\right)
+$$
+
+$$
+    \Delta a = \frac{\eta}{a} + \Delta b \cdot x
+$$
+
+where $\eta$ is the learning rate and $y = \tanh(ax + b)$ is the current neuron output. Crucially, these are purely local rules: $\Delta b$ depends only on the neuron's own output $y$, and $\Delta a$ additionally depends on the pre-activation input $x$, with no backpropagation required. This makes IP biologically plausible and computationally lightweight, as each neuron adapts independently and in an unsupervised manner. The gain $a$ effectively rescales the neuron's sensitivity to its inputs, while the bias $b$ shifts the distribution to match the target mean, together shaping the output statistics toward the desired Gaussian.
+
+This means that our RC dynamics become
+
+$$\text{pre\_act} = \mathbf{W}_{in} \mathbf{x}_t + \mathbf{W}_r \mathbf{h}_{t-1}$$
+
+$$\mathbf{h}_t=\tanh(a\cdot\text{pre\_act}+b)$$
+
+where $a$ and $b$ are the bias and gain added by the IP mechanism.
+
+This mechanism is especially useful in reservoir computing, as the reservoir is usually fixed and only governed by few hyperparameters, mostly the spectral radius. Using IP provides a principled method of improving the reservoir output without compromising the analytical training. \cite{10.1016/j.neucom.2007.12.020} demonstrated that applying IP pre-training to the reservoir consistently improved downstream performance, modfying the internal dynamics towards a more informative regime.
+
+\section{Attention-Enhanced RC}
+The Attention-Enhanced RC architecture
+
 
 \chapter{Methodology}
-Text for the methodology.
+implementation of the aerc architecture and training
+
+implementation of the IP mechanism
+- unsupervised
+- supervised
+
+description of hyperparameters sweep
+
+
 
 \chapter{Results}
 Text for the results.
 
 \chapter{Discussion}
-Text for the discussion.
+The use of a RC class model was driven by the efficiency of the architecture both in terms of computational resources and limited dataset size, however it's also interesting the superior performance exhibited by RC models in chaotic time-series prediction, often superior to more established architectures such as Transformers\cite{vaswani2023attentionneed}. This is why the RC paradigm remains interesting even under the famous Bitter Lesson\cite{sutton2019bitterlesson} line of thinking, meaning that more scalable methods outperform hand-crafted alternatives.
 
 \chapter{Conclusion}
 Text for the conclusion.

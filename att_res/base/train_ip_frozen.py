@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """
-Training and comparison script for AERC Base vs AERC with Intrinsic Plasticity (IP).
+Training and comparison script for:
+1. AERC Base (without IP)
+2. AERC with Intrinsic Plasticity (IP), with IP parameters frozen during BPTT
 
 Instantiates both models with identical initial weights, runs IP pre-training on the IP model,
-trains both models end-to-end via backpropagation, and plots a comparative performance graph.
+freezes the IP gain (ip_a) and bias (ip_b) parameters, and then trains both models end-to-end
+via backpropagation through time (BPTT) for only the attention and readout heads.
 """
 
 import os
@@ -118,8 +121,12 @@ def train_model(model, label, train_loader, val_loader, args, device, use_bf16):
     """Utility function to train a single model."""
     print(f"\n--- Training {label} ---")
     
+    # Extract only parameters that require grad
+    trainable_params = [p for p in model.parameters() if p.requires_grad]
+    print(f"  Optimizer active parameters: {len(trainable_params)} tensor(s) ({sum(p.numel() for p in trainable_params):,} values)")
+
     optimizer = torch.optim.AdamW(
-        [p for p in model.parameters() if p.requires_grad],
+        trainable_params,
         lr=args.lr,
         betas=(0.9, 0.95),
         weight_decay=args.weight_decay,
@@ -184,7 +191,8 @@ def train_model(model, label, train_loader, val_loader, args, device, use_bf16):
                     print(f"  step {step:5d}/{args.max_steps} | "
                           f"train {loss.item():.4f} | val {val_loss:.4f} | "
                           f"ppl {ppl:.2f} | "
-                          f"ip_a {mean_a:.4f}±{std_a:.4f} | ip_b {mean_b:.4f}±{std_b:.4f} | "
+                          f"ip_a {mean_a:.4f}±{std_a:.4f} (requires_grad={model.ip_a.requires_grad}) | "
+                          f"ip_b {mean_b:.4f}±{std_b:.4f} (requires_grad={model.ip_b.requires_grad}) | "
                           f"{elapsed:.1f}s")
                 else:
                     print(f"  step {step:5d}/{args.max_steps} | "
@@ -198,7 +206,7 @@ def train_model(model, label, train_loader, val_loader, args, device, use_bf16):
 # Main Training Loop
 # ---------------------------------------------------------------------------
 def main():
-    parser = argparse.ArgumentParser(description="Base vs Intrinsic Plasticity AERC Training")
+    parser = argparse.ArgumentParser(description="AERC Base vs AERC with Frozen Intrinsic Plasticity (IP) Training")
     parser.add_argument("--data", type=str,
                         default="/home/medlar/Projects/screening/att_res/tinyshakespeare.txt")
     parser.add_argument("--seq_len", type=int, default=128, help="Sequence length")
@@ -261,7 +269,6 @@ def main():
         N=args.N,
         H=args.H,
         spectral_radius=args.spectral_radius,
-        use_rmsnorm=False,
     ).to(device)
 
     # Initialize Model B: AERC IP (with IP pre-training)
@@ -273,17 +280,16 @@ def main():
         N=args.N,
         H=args.H,
         spectral_radius=args.spectral_radius,
-        use_rmsnorm=False,
     ).to(device)
 
-    trainable_params = model_base.count_parameters()
+    trainable_params_base = model_base.count_parameters()
     print("\n" + "=" * 70)
     print("AERC Comparison Setup:")
-    print(f"  Trainable Parameters: {trainable_params:,} per model")
+    print(f"  AERC Base Trainable Parameters: {trainable_params_base:,}")
     print(f"  Config: d_e={args.d_e}, N={args.N}, H={args.H}, SR={args.spectral_radius}")
     print("=" * 70)
 
-    # Pre-train Model B (IP) — each epoch uses a new sequential slice of ip_chars characters
+    # Pre-train Model B (IP)
     print("\nStarting Intrinsic Plasticity (IP) Pre-training for Model B...")
     print("-" * 70)
     pretrain_reservoir_ip(
@@ -298,6 +304,16 @@ def main():
         device=device,
     )
 
+    # CRITICAL STEP: Freeze the IP parameters (ip_a and ip_b)
+    # This prevents BPTT gradient updates during supervised backprop training.
+    print("\nFreezing IP parameters (ip_a and ip_b) in Model B so they are NOT updated via BPTT...")
+    model_ip.ip_a.requires_grad = False
+    model_ip.ip_b.requires_grad = False
+    
+    # Log parameter counts to verify freezing
+    trainable_params_ip_after = model_ip.count_parameters()
+    print(f"  AERC IP Trainable Parameters (after freezing): {trainable_params_ip_after:,} (should match Base: {trainable_params_base:,})")
+
     use_bf16 = args.bf16 and device.startswith("cuda")
 
     # Train Model A (Base)
@@ -305,9 +321,9 @@ def main():
         model_base, "AERC Base (No IP)", train_loader, val_loader, args, device, use_bf16
     )
 
-    # Train Model B (IP)
+    # Train Model B (IP with frozen parameters)
     ip_train_losses, ip_val_losses = train_model(
-        model_ip, "AERC with Intrinsic Plasticity", train_loader, val_loader, args, device, use_bf16
+        model_ip, "AERC with Intrinsic Plasticity (IP parameters FROZEN)", train_loader, val_loader, args, device, use_bf16
     )
 
     # Generate samples from both
@@ -318,7 +334,7 @@ def main():
     print("AERC Base (No IP):")
     print(seed_text + generate(model_base, chars, seed_text, args.seq_len, device=device))
     print("-" * 40)
-    print("AERC with Intrinsic Plasticity:")
+    print("AERC with Intrinsic Plasticity (FROZEN):")
     print(seed_text + generate(model_ip, chars, seed_text, args.seq_len, device=device))
     print("=" * 70)
 
@@ -337,7 +353,7 @@ def main():
 
         # Plot training losses
         axes[0].plot(smooth(base_train_losses), label="Base Train Loss", color="C0", alpha=0.6)
-        axes[0].plot(smooth(ip_train_losses), label="IP Train Loss", color="C1", alpha=0.6)
+        axes[0].plot(smooth(ip_train_losses), label="IP Frozen Train Loss", color="C1", alpha=0.6)
         axes[0].set_xlabel("Training step")
         axes[0].set_ylabel("Cross-entropy loss")
         axes[0].set_title("Training Loss Comparison")
@@ -350,7 +366,7 @@ def main():
             axes[1].plot(steps, base_vloss, "o-", label="Base Test Loss", color="C0", linewidth=2)
         if ip_val_losses:
             steps, ip_vloss = zip(*ip_val_losses)
-            axes[1].plot(steps, ip_vloss, "s-", label="IP Test Loss", color="C1", linewidth=2)
+            axes[1].plot(steps, ip_vloss, "s-", label="IP Frozen Test Loss", color="C1", linewidth=2)
         
         axes[1].set_xlabel("Training step")
         axes[1].set_ylabel("Cross-entropy loss")
@@ -358,11 +374,11 @@ def main():
         axes[1].legend()
         axes[1].grid(True, alpha=0.3)
 
-        plt.suptitle(f"AERC comparison: Base vs Intrinsic Plasticity ({trainable_params:,} parameters)", fontsize=14, fontweight="bold")
+        plt.suptitle(f"AERC Comparison: Base vs Intrinsic Plasticity (FROZEN during BPTT)", fontsize=14, fontweight="bold")
         plt.tight_layout()
         
         # Save comparison plot directly in base/ folder
-        out_path = os.path.join(os.path.dirname(__file__), "aerc_ip_comparison.png")
+        out_path = os.path.join(os.path.dirname(__file__), "aerc_ip_frozen_comparison.png")
         plt.savefig(out_path, dpi=150)
         print(f"\n✓ Comparison plot saved directly to {out_path}")
     except ImportError:

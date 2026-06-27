@@ -8,6 +8,22 @@
 \newblock Available from:
   \url{https://api.semanticscholar.org/CorpusID:14114724}.
 
+\bibitem{destexhe2004plasticity}
+\textsc{Destexhe, A. and Marder, E.}
+\newblock Plasticity in single neuron and circuit computations.
+\newblock \emph{Nature}, \textbf{431} (2004), 789.
+\newblock \href {http://dx.doi.org/10.1038/nature03011}
+  {\path{doi:10.1038/nature03011}}.
+
+\bibitem{ferte2024reservoir}
+\textsc{Ferté, T., Dutartre, D., Hejblum, B., Griffier, R., Jouhet, V.,
+  Thiébaut, R., Legrand, P., and Hinaut, X.}
+\newblock Reservoir computing for short high-dimensional time series: An
+  application to sars-cov-2 hospitalization forecast.
+\newblock In \emph{Proceedings of the 41st International Conference on Machine
+  Learning}, vol. 235 of \emph{Proceedings of Machine Learning Research}, pp.
+  13570--13591 (2024).
+
 \bibitem{Gallicchio2016DeepRC}
 \textsc{Gallicchio, C. and Micheli, A.}
 \newblock Deep reservoir computing: A critical analysis.
@@ -59,6 +75,14 @@
 \textsc{Lukosevicius, M.}
 \newblock Echo state networks with trained feedbacks (2007).
 
+\bibitem{Maass}
+\textsc{Maass, W., Natschläger, T., and Markram, H.}
+\newblock Real-time computing without stable states: A new framework for neural
+  computation based on perturbations.
+\newblock \emph{Neural Computation}, \textbf{14} (2002), 2531.
+\newblock \href {http://dx.doi.org/10.1162/089976602760407955}
+  {\path{doi:10.1162/089976602760407955}}.
+
 \bibitem{peng2023rwkvreinventingrnnstransformer}
 \textsc{Peng, B., et~al.}
 \newblock Rwkv: Reinventing rnns for the transformer era (2023).
@@ -73,6 +97,29 @@
 \newblock Available from: \url{https://doi.org/10.1016/j.neucom.2007.12.020},
   \href {http://dx.doi.org/10.1016/j.neucom.2007.12.020}
   {\path{doi:10.1016/j.neucom.2007.12.020}}.
+
+\bibitem{sutton2019bitterlesson}
+\textsc{Sutton, R.~S.}
+\newblock The bitter lesson.
+\newblock \url{http://www.incompleteideas.net/IncIdeas/BitterLesson.html}
+  (2019).
+\newblock Accessed: 2026-06-27.
+
+\bibitem{10.1007/11550822_11}
+\textsc{Triesch, J.}
+\newblock A gradient rule for the plasticity of a neuron's intrinsic
+  excitability.
+\newblock In \emph{Artificial Neural Networks: Biological Inspirations -- ICANN
+  2005} (edited by W.~Duch, J.~Kacprzyk, E.~Oja, and S.~Zadro{\.{z}}ny), pp.
+  65--70. Springer Berlin Heidelberg, Berlin, Heidelberg (2005).
+\newblock ISBN 978-3-540-28754-4.
+
+\bibitem{vaswani2023attentionneed}
+\textsc{Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez,
+  A.~N., Kaiser, L., and Polosukhin, I.}
+\newblock Attention is all you need (2023).
+\newblock Available from: \url{https://arxiv.org/abs/1706.03762}, \href
+  {http://arxiv.org/abs/1706.03762} {\path{arXiv:1706.03762}}.
 
 \bibitem{yuan-etal-2025-native}
 \textsc{Yuan, J., et~al.}

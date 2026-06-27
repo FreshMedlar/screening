@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux) (preloaded format=pdflatex 2026.6.21)  22 JUN 2026 19:29
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux) (preloaded format=pdflatex 2026.6.26)  27 JUN 2026 19:58
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -491,7 +491,7 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmss' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-<sapienzalogo.pdf, id=32, 288.07625pt x 89.33376pt>
+<sapienzalogo.pdf, id=44, 288.07625pt x 89.33376pt>
 File: sapienzalogo.pdf Graphic file (type pdf)
 <use sapienzalogo.pdf>
 Package pdftex.def Info: sapienzalogo.pdf  used on input line 30.
@@ -545,7 +545,14 @@ Underfull \hbox (badness 10000) in paragraph at lines 30--30
 
 ] [5] [6
 
-] (./thesis.toc)
+] (./thesis.toc
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <10.95> on input line 3.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <8> on input line 3.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <6> on input line 3.
+)
 \tf@toc=\write4
 \openout4 = `thesis.toc'.
 
@@ -559,23 +566,23 @@ Chapter 1.
 
 ]
 Chapter 2.
-[3] [4
+[3{/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}] [4{/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}] [5] [6
 
 ]
 Chapter 3.
-[5] [6
-
-]
-Chapter 4.
 [7] [8
 
 ]
-Chapter 5.
+Chapter 4.
 [9] [10
 
 ]
-Chapter 6.
+Chapter 5.
 [11] [12
+
+]
+Chapter 6.
+[13] [14
 
 ] (./thesis.bbl
 Package microtype Info: Character `029' is missing
@@ -589,36 +596,30 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmtt' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 9.
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 9.
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 9.
- [13
+ [15
 
 
-]) [14] (./thesis.aux)
+]) [16] (./thesis.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
 Package rerunfilecheck Info: File `thesis.out' has not changed.
-(rerunfilecheck)             Checksum: C7A13A380899629BA16B5CD611A62EF1;700.
+(rerunfilecheck)             Checksum: D9965D8B94804C6E0C1EEDAC37127630;1172.
  ) 
 Here is how much of TeX's memory you used:
- 14463 strings out of 469515
- 231310 string characters out of 5470807
- 683348 words of memory out of 5000000
- 42745 multiletter control sequences out of 15000+600000
- 705689 words of font info for 145 fonts, out of 8000000 for 9000
+ 14553 strings out of 469515
+ 232500 string characters out of 5470807
+ 682596 words of memory out of 5000000
+ 42766 multiletter control sequences out of 15000+600000
+ 722533 words of font info for 173 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  84i,12n,131p,1046b,580s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/share/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmcsc10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr7.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmri10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmss10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmss17.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
-Output written on thesis.pdf (22 pages, 282836 bytes).
+</usr/share/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmcsc10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmex10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmmi8.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr7.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr8.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmri10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmss10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmss17.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmsy8.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
+Output written on thesis.pdf (24 pages, 350852 bytes).
 PDF statistics:
- 258 PDF objects out of 1000 (max. 8388607)
- 208 compressed objects within 3 object streams
- 43 named destinations out of 1000 (max. 500000)
- 47678 words of extra memory for PDF output out of 51595 (max. 10000000)
+ 353 PDF objects out of 1000 (max. 8388607)
+ 286 compressed objects within 3 object streams
+ 57 named destinations out of 1000 (max. 500000)
+ 57942 words of extra memory for PDF output out of 61914 (max. 10000000)
 
