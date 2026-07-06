@@ -145,6 +145,7 @@ In this thesis we integrate the IP mechanism in the AERC model reservoir, showin
 %   sections themselves will go into depth.
 % ----------------------------------------------------------------
 
+
 \section{Reservoir Computing}
 % TARGET: ~2.5 pages
 Models in the Reservoir Computing\cite{jaeger2001echo} family follow a simple structure, which is composed of:

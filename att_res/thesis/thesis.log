@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux) (preloaded format=pdflatex 2026.6.26)  27 JUN 2026 23:04
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Arch Linux) (preloaded format=pdflatex 2026.7.5)  6 JUL 2026 19:23
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -247,7 +247,22 @@ Package: fancyhdr 2025/02/07 v5.2 Extensive control of page headers and footers
 \SAP@directortoks=\toks30
 \SAP@examinercount=\count311
 \SAP@examinertoks=\toks31
-) (/usr/share/texmf-dist/tex/latex/microtype/microtype.sty
+) (/usr/share/texmf-dist/tex/latex/koma-script/scrextend.sty
+Package: scrextend 2026/02/02 v3.49.2 KOMA-Script package (extend other classes with features of KOMA-Script classes)
+ (/usr/share/texmf-dist/tex/latex/koma-script/scrkbase.sty
+Package: scrkbase 2026/02/02 v3.49.2 KOMA-Script package (KOMA-Script-dependent basics and keyval usage)
+ (/usr/share/texmf-dist/tex/latex/koma-script/scrbase.sty
+Package: scrbase 2026/02/02 v3.49.2 KOMA-Script package (KOMA-Script-independent basics and keyval usage)
+ (/usr/share/texmf-dist/tex/latex/koma-script/scrlfile.sty
+Package: scrlfile 2026/02/02 v3.49.2 KOMA-Script package (file load hooks)
+ (/usr/share/texmf-dist/tex/latex/koma-script/scrlfile-hook.sty
+Package: scrlfile-hook 2026/02/02 v3.49.2 KOMA-Script package (using LaTeX hooks)
+ (/usr/share/texmf-dist/tex/latex/koma-script/scrlogo.sty
+Package: scrlogo 2026/02/02 v3.49.2 KOMA-Script package (logo)
+)))
+Applying: [2021/05/01] Usage of raw or classic option list on input line 254.
+Already applied: [0000/00/00] Usage of raw or classic option list on input line 370.
+))) (/usr/share/texmf-dist/tex/latex/microtype/microtype.sty
 Package: microtype 2026/03/01 v3.2d Micro-typographical refinements (RS)
 \MT@toks=\toks32
 \MT@tempbox=\box55
@@ -372,30 +387,36 @@ Package: uniquecounter 2019/12/15 v1.4 Provide unlimited unique counter (HO)
 Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 284.
 )
 \Hy@SectionHShift=\skip70
+) (/usr/share/texmf-dist/tex/latex/caption/subcaption.sty
+Package: subcaption 2023/07/28 v1.6b Sub-captions (AR)
+Package caption Info: New subtype `subfigure' on input line 238.
+\c@subfigure=\count325
+Package caption Info: New subtype `subtable' on input line 238.
+\c@subtable=\count326
 ) (/usr/share/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count325
+\l__color_backend_stack_int=\count327
 ) (./thesis.aux)
 \openout1 = `thesis.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 52.
+LaTeX Font Info:    ... okay on input line 52.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 52.
+LaTeX Font Info:    ... okay on input line 52.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 52.
+LaTeX Font Info:    ... okay on input line 52.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 52.
+LaTeX Font Info:    ... okay on input line 52.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 52.
+LaTeX Font Info:    ... okay on input line 52.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 52.
+LaTeX Font Info:    ... okay on input line 52.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 52.
+LaTeX Font Info:    ... okay on input line 52.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 52.
+LaTeX Font Info:    ... okay on input line 52.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 52.
+LaTeX Font Info:    ... okay on input line 52.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -423,7 +444,7 @@ LaTeX Font Info:    ... okay on input line 25.
 * \marginparwidth=72.0pt
 * \marginparsep=12.0pt
 * \columnsep=10.0pt
-* \skip\footins=10.0pt plus 4.0pt minus 2.0pt
+* \skip\footins=10.79997pt plus 4.79947pt minus 2.4005pt
 * \hoffset=0.0pt
 * \voffset=0.0pt
 * \mag=1000
@@ -435,19 +456,22 @@ LaTeX Font Info:    ... okay on input line 25.
 
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: hyperref package is loaded.
+Package caption Info: scrextend package is loaded.
+\caption@addmargin@hsize=\dimen194
+\caption@addmargin@linewidth=\dimen195
 Package caption Info: End \AtBeginDocument code.
 (/usr/share/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count326
-\scratchdimen=\dimen194
+\scratchcounter=\count328
+\scratchdimen=\dimen196
 \scratchbox=\box56
-\nofMPsegments=\count327
-\nofMParguments=\count328
+\nofMPsegments=\count329
+\nofMParguments=\count330
 \everyMPshowfont=\toks34
-\MPscratchCnt=\count329
-\MPscratchDim=\dimen195
-\MPnumerator=\count330
-\makeMPintoPDFobject=\count331
+\MPscratchCnt=\count331
+\MPscratchDim=\dimen197
+\MPnumerator=\count332
+\makeMPintoPDFobject=\count333
 \everyMPtoPDFconversion=\toks35
 ) (/usr/share/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
@@ -455,14 +479,14 @@ Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 48
  (/usr/share/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 ))
-LaTeX Info: Redefining \textsubscript on input line 25.
-LaTeX Info: Redefining \microtypecontext on input line 25.
-Package microtype Info: Applying patch `item' on input line 25.
-Package microtype Info: Applying patch `toc' on input line 25.
-Package microtype Info: Applying patch `eqnum' on input line 25.
-Package microtype Info: Applying patch `footnote' on input line 25.
-Package microtype Info: Applying patch `verbatim' on input line 25.
-LaTeX Info: Redefining \microtypesetup on input line 25.
+LaTeX Info: Redefining \textsubscript on input line 52.
+LaTeX Info: Redefining \microtypecontext on input line 52.
+Package microtype Info: Applying patch `item' on input line 52.
+Package microtype Info: Applying patch `toc' on input line 52.
+Package microtype Info: Applying patch `eqnum' on input line 52.
+Package microtype Info: Applying patch `footnote' on input line 52.
+Package microtype Info: Applying patch `verbatim' on input line 52.
+LaTeX Info: Redefining \microtypesetup on input line 52.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
@@ -476,14 +500,14 @@ Package microtype Info: No adjustment of character kerning.
  (/usr/share/texmf-dist/tex/latex/microtype/mt-cmr.cfg
 File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman (RS)
 )
-Package hyperref Info: Link coloring OFF on input line 25.
+Package hyperref Info: Link coloring OFF on input line 52.
  (./thesis.out) (./thesis.out)
 \@outlinefile=\write3
 \openout3 = `thesis.out'.
 
 \SAP@parboxindent=\skip71
 \SAP@parboxwidth=\skip72
-LaTeX Font Info:    Trying to load font information for T1+lmss on input line 30.
+LaTeX Font Info:    Trying to load font information for T1+lmss on input line 57.
  (/usr/share/texmf-dist/tex/latex/lm/t1lmss.fd
 File: t1lmss.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -494,45 +518,48 @@ Package microtype Info: Loading generic protrusion settings for font family
 <sapienzalogo.pdf, id=60, 288.07625pt x 89.33376pt>
 File: sapienzalogo.pdf Graphic file (type pdf)
 <use sapienzalogo.pdf>
-Package pdftex.def Info: sapienzalogo.pdf  used on input line 30.
+Package pdftex.def Info: sapienzalogo.pdf  used on input line 57.
 (pdftex.def)             Requested size: 142.26378pt x 44.11742pt.
  [1
 
 
 
+
+
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}{/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc} <./sapienzalogo.pdf>]
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 30.
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 57.
  (/usr/share/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-Underfull \hbox (badness 10000) in paragraph at lines 30--30
+Underfull \hbox (badness 10000) in paragraph at lines 57--57
 
  []
 
-LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 30.
+LaTeX Font Info:    Calculating math sizes for size <10.95007> on input line 57.
+LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 57.
 (/usr/share/texmf-dist/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OML+lmm on input line 30.
+LaTeX Font Info:    Trying to load font information for OML+lmm on input line 57.
  (/usr/share/texmf-dist/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 30.
+LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 57.
  (/usr/share/texmf-dist/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 30.
+LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 57.
  (/usr/share/texmf-dist/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 30.
+(Font)              <10.95007> on input line 57.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 30.
+(Font)              <7.66501> on input line 57.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 30.
+(Font)              <5.47504> on input line 57.
 
-Underfull \hbox (badness 10000) in paragraph at lines 30--30
+Underfull \hbox (badness 10000) in paragraph at lines 57--57
 
  []
 
@@ -541,13 +568,17 @@ Underfull \hbox (badness 10000) in paragraph at lines 30--30
 {/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}] [3
 
 
+
+
 ] [4
+
 
 ] [5] [6
 
+
 ] (./thesis.toc
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 3.
+(Font)              <12> on input line 3.
 LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <8> on input line 3.
 LaTeX Font Info:    External font `lmex10' loaded for size
@@ -558,35 +589,51 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 
  [7] [8
 
+
 ]
 Chapter 1.
 [1
 
+
 ] [2
+
 
 ]
 Chapter 2.
-[3{/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}] [4{/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}] [5] [6
+[3{/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}] [4{/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}]
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.14003pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.14003pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-1.14003pt}.
+
+[5] [6
+
 
 ]
 Chapter 3.
 [7] [8
 
+
 ]
 Chapter 4.
 [9] [10
+
 
 ]
 Chapter 5.
 [11] [12
 
+
 ]
 Chapter 6.
 [13] [14
 
+
 ] (./thesis.bbl
 Package microtype Info: Character `029' is missing
-(microtype)             in font `T1/lmr/m/sc/10.95'.
+(microtype)             in font `T1/lmr/m/sc/12'.
 (microtype)             Ignoring protrusion settings for this character.
 LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 9.
  (/usr/share/texmf-dist/tex/latex/lm/t1lmtt.fd
@@ -599,7 +646,17 @@ Package microtype Info: Loading generic protrusion settings for font family
  [15
 
 
-]) [16] (./thesis.aux)
+
+
+] [16])
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 13.14003pt, for example:
+(fancyhdr)                \setlength{\headheight}{13.14003pt}.
+(fancyhdr)                You might also make \topmargin smaller:
+(fancyhdr)                \addtolength{\topmargin}{-1.14003pt}.
+
+[17] (./thesis.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
@@ -608,18 +665,18 @@ Package rerunfilecheck Info: File `thesis.out' has not changed.
 (rerunfilecheck)             Checksum: 4D979A3034A0B9E783FAD4D7A592AF40;1903.
  ) 
 Here is how much of TeX's memory you used:
- 14567 strings out of 469515
- 232777 string characters out of 5470807
- 685748 words of memory out of 5000000
- 42773 multiletter control sequences out of 15000+600000
- 722533 words of font info for 173 fonts, out of 8000000 for 9000
+ 15562 strings out of 469515
+ 251990 string characters out of 5470808
+ 733370 words of memory out of 5000000
+ 43721 multiletter control sequences out of 15000+600000
+ 724897 words of font info for 187 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 84i,12n,131p,1046b,582s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/share/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmcsc10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmex10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmmi8.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr7.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr8.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmri10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmss10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmss17.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmsy8.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
-Output written on thesis.pdf (24 pages, 356699 bytes).
+ 108i,12n,131p,1046b,588s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</usr/share/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmcsc10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmex10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmmi12.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmmi8.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr12.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmr8.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmri12.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmss12.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmss17.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmsy8.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmtt12.pfb>
+Output written on thesis.pdf (25 pages, 365960 bytes).
 PDF statistics:
- 387 PDF objects out of 1000 (max. 8388607)
- 319 compressed objects within 4 object streams
- 64 named destinations out of 1000 (max. 500000)
+ 395 PDF objects out of 1000 (max. 8388607)
+ 326 compressed objects within 4 object streams
+ 65 named destinations out of 1000 (max. 500000)
  57974 words of extra memory for PDF output out of 61914 (max. 10000000)
 

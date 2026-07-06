@@ -4,8 +4,6 @@
 
 \documentclass{sapthesis}
 
-\usepackage{scrextend}  % override sapthesis's hardcoded 11pt
-\changefontsizes{12pt}
 \usepackage{microtype} % Commented out because scalable fonts (like lmodern) are missing
 \usepackage[T1]{fontenc}
 \usepackage{hyperref}
@@ -58,15 +56,15 @@
 \dedication{Dedicated to\\ my family and friends.}
 
 \begin{abstract}
-  While the Transformer architecture has dominated the machine learning field
-  this decade, there is a growing search for more efficient architectures
-  during both training and inference. Reservoir computing, while remaining a
-  strong class of models for time series prediction, struggles with discrete data
-  like text. Attention-enhanced reservoir computing (AERC) tries to overcome
-  this limitation using attention only on a fixed size reservoir, avoiding a
-  growing KV cache. In this paper, we integrate Intrinsic Plasticity to the
-  fixed reservoir to improve the AERC architecture and test it on a
-  wider set of tasks. We find TODO
+    While the Transformer architecture has dominated the machine learning field
+    this decade, there is a growing search for more efficient architectures
+    during both training and inference. Reservoir computing, while remaining a
+    strong class of models for time series prediction, struggles with discrete data
+    like text. Attention-enhanced reservoir computing (AERC) tries to overcome
+    this limitation using attention only on a fixed size reservoir, avoiding a
+    growing KV cache. In this paper, we integrate Intrinsic Plasticity to the
+    fixed reservoir to improve the AERC architecture and test it on a
+    wider set of tasks. We find TODO
 \end{abstract}
 
 \tableofcontents
@@ -133,10 +131,12 @@ In this thesis we integrate the IP mechanism in the AERC model reservoir, showin
 %   attention mechanisms. Chapter 3 describes the experimental setup...''
 % ----------------------------------------------------------------
 
+
 % ============================================================
 % CHAPTER 2 — LITERATURE REVIEW  (~8 pages)
 % ============================================================
 \chapter{Literature Review}
+
 % ----------------------------------------------------------------
 % TODO (opening paragraph — ~0.5 page):
 %   Briefly situate the three pillars covered in this chapter:
@@ -149,9 +149,9 @@ In this thesis we integrate the IP mechanism in the AERC model reservoir, showin
 % TARGET: ~2.5 pages
 Models in the Reservoir Computing\cite{jaeger2001echo} family follow a simple structure, which is composed of:
 \begin{enumerate}
-  \item an input layer $\mathbf{W}_{in}$ that randomly projects input $\mathbf{x}_t$ in the reservoir and is not trained
-  \item a reservoir described whose dynamics are described by the adjacency matrix $\mathbf{W}_r$ which is not trained
-  \item a trained readout $\mathbf{W}_{out}$ which uses the reservoir states $r_i$ to predict the next state $r_{i+1}$
+    \item an input layer $\mathbf{W}_{in}$ that randomly projects input $\mathbf{x}_t$ in the reservoir and is not trained
+    \item a reservoir described whose dynamics are described by the adjacency matrix $\mathbf{W}_r$ which is not trained
+    \item a trained readout $\mathbf{W}_{out}$ which uses the reservoir states $r_i$ to predict the next state $r_{i+1}$
 \end{enumerate}
 The internal dynamics of the reservoir can then be described by the function:
 
@@ -211,11 +211,11 @@ The Gaussian is the maximum-entropy distribution under a fixed mean and variance
 
 The derived learning rules from~\cite{10.1016/j.neucom.2007.12.020} to obtain this objective are
 $$
-  \Delta b = \eta \left(1 - \left(2 + \frac{1}{\mu}\right)y + \frac{y^2}{\mu}\right)
+    \Delta b = \eta \left(1 - \left(2 + \frac{1}{\mu}\right)y + \frac{y^2}{\mu}\right)
 $$
 
 $$
-  \Delta a = \frac{\eta}{a} + \Delta b \cdot x
+    \Delta a = \frac{\eta}{a} + \Delta b \cdot x
 $$
 
 where $\eta$ is the learning rate and $y = \tanh(ax + b)$ is the current neuron output. Crucially, these are purely local rules: $\Delta b$ depends only on the neuron's own output $y$, and $\Delta a$ additionally depends on the pre-activation input $x$, with no backpropagation required. This makes IP biologically plausible and computationally lightweight, as each neuron adapts independently and in an unsupervised manner. The gain $a$ effectively rescales the neuron's sensitivity to its inputs, while the bias $b$ shifts the distribution to match the target mean, together shaping the output statistics toward the desired Gaussian.
@@ -306,6 +306,7 @@ The Attention-Enhanced RC architecture description
 %   - This provides the baseline against which your improvements are
 %     measured in Chapter~4.
 % ----------------------------------------------------------------
+
 
 % ============================================================
 % CHAPTER 3 — METHODOLOGY  (~9 pages)
@@ -520,6 +521,7 @@ where $\hat{y}$ are the output logits and $y$ the true label. We apply the softm
 %     within the tested range.
 % ----------------------------------------------------------------
 
+
 % ============================================================
 % CHAPTER 4 — RESULTS  (~8 pages)
 % ============================================================
@@ -601,6 +603,7 @@ Text for the results.
 %   - State which configuration is selected as the best and why.
 % ----------------------------------------------------------------
 
+
 % ============================================================
 % CHAPTER 5 — DISCUSSION  (~4 pages)
 % ============================================================
@@ -661,6 +664,7 @@ The use of a RC class model was driven by the efficiency of the architecture bot
 %     distribution before the attention head is trained.
 % ----------------------------------------------------------------
 
+
 % ============================================================
 % CHAPTER 6 — CONCLUSION  (~2 pages)
 % ============================================================
@@ -691,6 +695,7 @@ Text for the conclusion.
 %   - Investigate whether the IP distribution target ($\mu$, $\sigma$)
 %     can be learned end-to-end via a meta-learning objective.
 % ----------------------------------------------------------------
+
 
 % --- Back Matter (Bibliography) ---
 \backmatter

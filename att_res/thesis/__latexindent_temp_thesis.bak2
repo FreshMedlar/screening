@@ -4,8 +4,6 @@
 
 \documentclass{sapthesis}
 
-\usepackage{scrextend}  % override sapthesis's hardcoded 11pt
-\changefontsizes{12pt}
 \usepackage{microtype} % Commented out because scalable fonts (like lmodern) are missing
 \usepackage[T1]{fontenc}
 \usepackage{hyperref}
@@ -137,6 +135,7 @@ In this thesis we integrate the IP mechanism in the AERC model reservoir, showin
 % CHAPTER 2 — LITERATURE REVIEW  (~8 pages)
 % ============================================================
 \chapter{Literature Review}
+
 % ----------------------------------------------------------------
 % TODO (opening paragraph — ~0.5 page):
 %   Briefly situate the three pillars covered in this chapter:
@@ -144,6 +143,7 @@ In this thesis we integrate the IP mechanism in the AERC model reservoir, showin
 %   (3) attention and AERC.  One sentence each is enough; the
 %   sections themselves will go into depth.
 % ----------------------------------------------------------------
+
 
 \section{Reservoir Computing}
 % TARGET: ~2.5 pages
