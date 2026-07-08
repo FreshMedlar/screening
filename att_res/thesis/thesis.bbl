@@ -1,5 +1,12 @@
 \begin{thebibliography}{10}
 
+\bibitem{basterrech2017empiricalanalysisnecessarysufficient}
+\textsc{Basterrech, S.}
+\newblock Empirical analysis of the necessary and sufficient conditions of the
+  echo state property (2017).
+\newblock Available from: \url{https://arxiv.org/abs/1703.06664}, \href
+  {http://arxiv.org/abs/1703.06664} {\path{arXiv:1703.06664}}.
+
 \bibitem{Brunner2013ParallelPI}
 \textsc{Brunner, D., Soriano, M.~C., Mirasso, C.~R., and Fischer, I.}
 \newblock Parallel photonic information processing at gigabyte per second data
@@ -153,5 +160,10 @@
 \newblock Available from: \url{https://aclanthology.org/2025.acl-long.1126/},
   \href {http://dx.doi.org/10.18653/v1/2025.acl-long.1126}
   {\path{doi:10.18653/v1/2025.acl-long.1126}}.
+
+\bibitem{zhang2019root}
+\textsc{Zhang, B. and Sennrich, R.}
+\newblock Root mean square layer normalization.
+\newblock In \emph{Advances in Neural Information Processing Systems} (2019).
 
 \end{thebibliography}

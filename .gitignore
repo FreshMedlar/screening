@@ -3,3 +3,4 @@ cityscapes/
 checkpoints/
 **/__pycache__/
 *.py[cod]
+__latexindent_temp*

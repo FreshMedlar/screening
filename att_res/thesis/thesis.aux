@@ -23,64 +23,111 @@
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \citation{jaeger2001echo}
-\citation{10.1007/11550822_11}
-\citation{destexhe2004plasticity}
 \@writefile{toc}{\contentsline {chapter}{\numberline {2}Literature Review}{3}{chapter.2}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \@writefile{toc}{\contentsline {section}{\numberline {2.1}Reservoir Computing}{3}{section.2.1}\protected@file@percent }
+\citation{jaeger2001echo}
+\citation{basterrech2017empiricalanalysisnecessarysufficient}
+\@writefile{lof}{\contentsline {figure}{\numberline {2.1}{\ignorespaces A schematic representations of the Reservoir Computing architecture.}}{4}{figure.caption.2}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:rc-architecture}{{2.1}{4}{A schematic representations of the Reservoir Computing architecture}{figure.caption.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.1}Echo State Property}{4}{subsection.2.1.1}\protected@file@percent }
+\citation{Gallicchio2016DeepRC}
+\citation{JAEGER2007335}
+\citation{Lukosevicius2007}
+\citation{Gauthier_2021}
+\citation{Brunner2013ParallelPI}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.2}Reservoir Extensions}{5}{subsection.2.1.2}\protected@file@percent }
+\citation{10.1007/11550822_11}
+\citation{destexhe2004plasticity}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.3}Gradient-Based Training of the Readout}{6}{subsection.2.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.2}Intrinsic Plasticity}{6}{section.2.2}\protected@file@percent }
+\newlabel{sec:ip}{{2.2}{6}{Intrinsic Plasticity}{section.2.2}{}}
 \citation{10.1016/j.neucom.2007.12.020}
-\@writefile{toc}{\contentsline {section}{\numberline {2.2}Intrinsic Plasticity}{4}{section.2.2}\protected@file@percent }
 \citation{10.1016/j.neucom.2007.12.020}
-\@writefile{toc}{\contentsline {section}{\numberline {2.3}Attention-Enhanced RC}{5}{section.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.3}Attention-Enhanced RC}{8}{section.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.1}Motivation: from Fixed to Dynamic Readout}{8}{subsection.2.3.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.2}{\ignorespaces The Attention-Enhanced Reservoir Computing (AERC) architecture. The input and reservoir remain the same as Figure~\ref {fig:rc-architecture}, while we now have the feedforward layer (in yellow) producing the attention weights for the reservoir states. Using gradient methods also means that cross-entropy loss is now viable.}}{8}{figure.caption.3}\protected@file@percent }
+\newlabel{fig:aerc}{{2.2}{8}{The Attention-Enhanced Reservoir Computing (AERC) architecture. The input and reservoir remain the same as Figure~\ref {fig:rc-architecture}, while we now have the feedforward layer (in yellow) producing the attention weights for the reservoir states. Using gradient methods also means that cross-entropy loss is now viable}{figure.caption.3}{}}
+\citation{zhang2019root}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.2}Architecture}{9}{subsection.2.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Input Embedding.}{9}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Reservoir.}{9}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Normalization.}{9}{section*.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Attention Weight Generation.}{9}{section*.7}\protected@file@percent }
+\citation{koster2024attentionenhancedreservoircomputing}
+\@writefile{toc}{\contentsline {paragraph}{Attention Projection and Readout.}{10}{section*.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Trainable Parameters.}{10}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.3}Results from the original paper}{10}{subsection.2.3.3}\protected@file@percent }
+\citation{zhang2019root}
 \citation{koster2024attentionenhancedreservoircomputing}
 \citation{karpathy2015charRnn}
 \citation{Paszke2019PyTorch}
+\citation{karpathy2015charRnn}
+\@writefile{toc}{\contentsline {chapter}{\numberline {3}Methodology}{11}{chapter.3}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{toc}{\contentsline {section}{\numberline {3.1}AERC architecture implementation}{11}{section.3.1}\protected@file@percent }
+\newlabel{sec:aerc-impl}{{3.1}{11}{AERC architecture implementation}{section.3.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1.1}Dataset and Preprocessing}{11}{subsection.3.1.1}\protected@file@percent }
 \citation{loshchilov2019decoupledweightdecayregularization}
-\@writefile{toc}{\contentsline {chapter}{\numberline {3}Methodology}{7}{chapter.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1.2}Reservoir Initialisation}{12}{subsection.3.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1.3}Attention Network and Readout}{12}{subsection.3.1.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3.1}{\ignorespaces Trainable parameter breakdown for the AERC model ($N=160$, $H=30$, $V=65$).}}{12}{table.caption.10}\protected@file@percent }
+\newlabel{tab:param-count}{{3.1}{12}{Trainable parameter breakdown for the AERC model ($N=160$, $H=30$, $V=65$)}{table.caption.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1.4}Training Schedule}{12}{subsection.3.1.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.2}IP implementation}{13}{section.3.2}\protected@file@percent }
+\newlabel{sec:ip-impl}{{3.2}{13}{IP implementation}{section.3.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2.1}Unsupervised IP Pre-training}{13}{subsection.3.2.1}\protected@file@percent }
+\citation{zhang2019root}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2.2}Gradient-Based Fine-Tuning of IP Parameters}{14}{subsection.3.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2.3}Model Variants}{14}{subsection.3.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.3}IP and RMSNormalization}{14}{section.3.3}\protected@file@percent }
+\newlabel{sec:rmsnorm}{{3.3}{14}{IP and RMSNormalization}{section.3.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3.1}Motivation}{15}{subsection.3.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3.2}Experimental Design}{15}{subsection.3.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.4}Hyperparameter Grid Search}{15}{section.3.4}\protected@file@percent }
+\newlabel{sec:grid-search}{{3.4}{15}{Hyperparameter Grid Search}{section.3.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4.1}Search Space}{16}{subsection.3.4.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3.2}{\ignorespaces Hyperparameter grid search results for the IP-gradient model ($N=160$, $H=30$, spectral radius 0.98, $\eta =5\times 10^{-3}$). Validation loss is reported after 2{,}000 training steps.}}{16}{table.caption.11}\protected@file@percent }
+\newlabel{tab:grid-results}{{3.2}{16}{Hyperparameter grid search results for the IP-gradient model ($N=160$, $H=30$, spectral radius 0.98, $\eta =5\times 10^{-3}$). Validation loss is reported after 2{,}000 training steps}{table.caption.11}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4.2}Selection Criterion and Observations}{16}{subsection.3.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {4}Results}{17}{chapter.4}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\@writefile{toc}{\contentsline {section}{\numberline {3.1}AERC architecture implementation}{7}{section.3.1}\protected@file@percent }
-\newlabel{sec:aerc-impl}{{3.1}{7}{AERC architecture implementation}{section.3.1}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.2}IP implementation}{7}{section.3.2}\protected@file@percent }
-\newlabel{sec:ip-impl}{{3.2}{7}{IP implementation}{section.3.2}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.3}IP and RMSNormalization}{7}{section.3.3}\protected@file@percent }
-\newlabel{sec:rmsnorm}{{3.3}{7}{IP and RMSNormalization}{section.3.3}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {3.4}Hyperparameter Grid Search}{7}{section.3.4}\protected@file@percent }
-\newlabel{sec:grid-search}{{3.4}{7}{Hyperparameter Grid Search}{section.3.4}{}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {4}Results}{9}{chapter.4}\protected@file@percent }
-\@writefile{lof}{\addvspace {10\p@ }}
-\@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{ch:results}{{4}{9}{Results}{chapter.4}{}}
+\newlabel{ch:results}{{4}{17}{Results}{chapter.4}{}}
 \citation{vaswani2023attentionneed}
 \citation{sutton2019bitterlesson}
-\@writefile{toc}{\contentsline {chapter}{\numberline {5}Discussion}{11}{chapter.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {5}Discussion}{19}{chapter.5}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\@writefile{toc}{\contentsline {chapter}{\numberline {6}Conclusion}{13}{chapter.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {6}Conclusion}{21}{chapter.6}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \bibstyle{sapthesis}
 \bibdata{references}
-\bibcite{Brunner2013ParallelPI}{1}
-\bibcite{destexhe2004plasticity}{2}
-\bibcite{ferte2024reservoir}{3}
-\bibcite{Gallicchio2016DeepRC}{4}
-\bibcite{Gauthier_2021}{5}
-\bibcite{gu2024mambalineartimesequencemodeling}{6}
-\bibcite{jaeger2001echo}{7}
-\bibcite{JAEGER2007335}{8}
-\@writefile{toc}{\contentsline {chapter}{Bibliography}{15}{section*.2}\protected@file@percent }
-\bibcite{karpathy2015charRnn}{9}
-\bibcite{koster2024attentionenhancedreservoircomputing}{10}
-\bibcite{loshchilov2019decoupledweightdecayregularization}{11}
-\bibcite{Lukosevicius2007}{12}
-\bibcite{Maass}{13}
-\bibcite{Paszke2019PyTorch}{14}
-\bibcite{peng2023rwkvreinventingrnnstransformer}{15}
-\bibcite{10.1016/j.neucom.2007.12.020}{16}
-\bibcite{sutton2019bitterlesson}{17}
-\bibcite{10.1007/11550822_11}{18}
-\bibcite{vaswani2023attentionneed}{19}
-\bibcite{yuan-etal-2025-native}{20}
-\gdef \@abspage@last{25}
+\bibcite{basterrech2017empiricalanalysisnecessarysufficient}{1}
+\bibcite{Brunner2013ParallelPI}{2}
+\bibcite{destexhe2004plasticity}{3}
+\bibcite{ferte2024reservoir}{4}
+\bibcite{Gallicchio2016DeepRC}{5}
+\bibcite{Gauthier_2021}{6}
+\bibcite{gu2024mambalineartimesequencemodeling}{7}
+\bibcite{jaeger2001echo}{8}
+\bibcite{JAEGER2007335}{9}
+\@writefile{toc}{\contentsline {chapter}{Bibliography}{23}{section*.12}\protected@file@percent }
+\bibcite{karpathy2015charRnn}{10}
+\bibcite{koster2024attentionenhancedreservoircomputing}{11}
+\bibcite{loshchilov2019decoupledweightdecayregularization}{12}
+\bibcite{Lukosevicius2007}{13}
+\bibcite{Maass}{14}
+\bibcite{Paszke2019PyTorch}{15}
+\bibcite{peng2023rwkvreinventingrnnstransformer}{16}
+\bibcite{10.1016/j.neucom.2007.12.020}{17}
+\bibcite{sutton2019bitterlesson}{18}
+\bibcite{10.1007/11550822_11}{19}
+\bibcite{vaswani2023attentionneed}{20}
+\bibcite{yuan-etal-2025-native}{21}
+\bibcite{zhang2019root}{22}
+\gdef \@abspage@last{33}

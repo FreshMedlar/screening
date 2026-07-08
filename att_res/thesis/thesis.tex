@@ -12,6 +12,7 @@
 \usepackage{booktabs}   % for professional-quality tables (\toprule, \midrule, \bottomrule)
 \usepackage{graphicx}   % for \includegraphics
 \usepackage{amsmath}    % for align, split, etc.
+\usepackage{amssymb}    % for \mathbb, \mathcal, etc.
 \usepackage{subcaption} % for side-by-side subfigures
 \hypersetup{pdftitle={Improving Attention-Enhanced Reservoir Computing with Intrinsic Plasticity},pdfauthor={Emanuele Segatori}}
 
@@ -136,6 +137,7 @@ In this thesis we integrate the IP mechanism in the AERC model reservoir, showin
 % ============================================================
 % CHAPTER 2 — LITERATURE REVIEW  (~8 pages)
 % ============================================================
+
 \chapter{Literature Review}
 % ----------------------------------------------------------------
 % TODO (opening paragraph — ~0.5 page):
@@ -144,6 +146,8 @@ In this thesis we integrate the IP mechanism in the AERC model reservoir, showin
 %   (3) attention and AERC.  One sentence each is enough; the
 %   sections themselves will go into depth.
 % ----------------------------------------------------------------
+In this chapter we discuss the three main areas of interest in this thesis, which are the Reservoir Computing paradigm first, the Intrinsic Plasticity mechanism and its applications second, and lastly the new Attention-Enhanced Reservoir Computing architecture.
+Models from the Reservoir Computing family are interesting for being easy and cheap to train, both in terms of data and compute, and for their natural fit for time-series problems. Intrinsic Plasticity, inspired by biological mechanisms, is a perfect addition to Reservoir Computing as it is both efficient and does not change the training dynamics while improving the reservoir stability and efficiency with negligible parameter increase. Lastly, the Attention-Enhanced Reservoir Computing architecture adds the attention mechanism to RC, sacrificing the analytical training but gaining greater performance and making it possible to use the reservoir for non-continuous values.
 
 \section{Reservoir Computing}
 % TARGET: ~2.5 pages
@@ -155,17 +159,43 @@ Models in the Reservoir Computing\cite{jaeger2001echo} family follow a simple st
 \end{enumerate}
 The internal dynamics of the reservoir can then be described by the function:
 
-$$\mathbf{h}_t = \tanh(\mathbf{W}_{in} \mathbf{x}_t + \mathbf{W}_r \mathbf{h}_{t-1})$$
+\[
+  \mathbf{h}_t = \tanh(\mathbf{W}_{in} \mathbf{x}_t + \mathbf{W}_r \mathbf{h}_{t-1})
+\]
 
 The vector $\mathbf{h}_t$ is then used to express the output $\mathbf{y}_{t+1}$ using a linear transformation
 
-$$\mathbf{y}_{t+1} = \mathbf{W}_{out} \mathbf{h}_t$$
+\[
+  \mathbf{y}_{t+1} = \mathbf{W}_{out} \mathbf{h}_t
+\]
 
 and $W_{out}$ is trained in a supervised (or self-supervised) way using least-square regression with Tihkonov regularization, commonly called ridge regression
 
-$$\min_\beta \|y - x\beta\|^2 + \lambda \|\beta\|^2$$
+\[
+  \min_\beta \|y - x\beta\|^2 + \lambda \|\beta\|^2
+\]
 
 Using an analytic solution is an extremely compelling part of RC, using computational resources and data more efficiently, and making the model more stable both during training and deployment, especially for long term behaviors like modeling a chaotic time-series. It also guarantee good generalization and simpler, faster training iterations.
+
+\begin{figure}[htpb]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/reservoir.pdf}
+  \caption{A schematic representations of the Reservoir Computing architecture.}
+  \label{fig:rc-architecture}
+\end{figure}
+
+\subsection{Echo State Property}
+Fundamental for Echo State Networks (ESN) is the Echo State Property (ESP). The ESP dictates that the states of the reservoir must forget the initial conditions, meaning that, after a warmup period, the state of the reservoir must be determined only by the past inputs rather than the initial condition.
+Let $\mathbf{h}_t$ and $\mathbf{h}'_t$ be two trajectories obtained by the same input $\mathbf{x}_t$ but with different reservoir initialisation $\mathbf{h}_0$ and $\mathbf{h}'_0$; then the ESP is upheld if:
+\[
+  \lim_{t \to \infty} \|\mathbf{h}_t - \mathbf{h}'_t\| = 0.
+\]
+
+From \cite{jaeger2001echo}, the standard practice to ensure the ESP is respected is to tune the reservoir spectral radius to be slightly under 1:
+\[
+  \rho(\mathbf{W}_r) < 1
+\]
+where $\rho(\mathbf{W}_r)$ represents the largest absolute eigenvalue of the reservoir matrix $\mathbf{W}_r$. For many ESN tasks performance is optimal near the edge of stability\cite{basterrech2017empiricalanalysisnecessarysufficient} (0.9--0.99) where memory is maximized without compromising order; however, this changes with the addition of different dynamics in the reservoir, such as leaky neurons, or for different tasks with alternative memory needs.
 
 % ----------------------------------------------------------------
 % TODO (Section 2.1 continuation — ~1.5 pages):
@@ -180,16 +210,19 @@ Using an analytic solution is an extremely compelling part of RC, using computat
 %   - Cite \cite{jaeger2001echo} and briefly mention that a spectral radius
 %     close to (but below) 1 is typically used in practice.
 %
-% \subsection{Reservoir Extensions}
-%   Dedicate 3–4 sentences each to the following, all of which are cited
-%   in the Introduction and are relevant context for your own work:
-%   - Deep / hierarchical reservoirs \cite{Gallicchio2016DeepRC}
-%   - Leaky integrator neurons \cite{JAEGER2007335}
-%   - Feedback connections \cite{Lukosevicius2007}
-%   - Next-generation RC (nonlinear feature expansion) \cite{Gauthier_2021}
-%   - Physical / photonic reservoirs \cite{Brunner2013ParallelPI}
-%   - Time-series SOTA results \cite{ferte2024reservoir}
-%
+\subsection{Reservoir Extensions}
+Building upon the performance showed by the base RC architectures, there have been various studies exploring modifications and addition in order to improve the architecture without compromising its attractive features.
+
+One prominent extension is Deep Reservoir Computing\cite{Gallicchio2016DeepRC}, which stacks multiple untrained reservoirs in a hierarchical structure. By feeding the state of one reservoir into the next, the model naturally extracts temporal features at multiple timescales. This deep architecture allows the network to handle complex multi-scale dynamics and richer representations without the computational burden of training deep recurrent layers via backpropagation.
+
+To better handle slow-moving or continuous data, \cite{JAEGER2007335} introduced Leaky Integrator Echo State Networks (LI-ESNs). In this variant, each neuron retains a fraction of its previous activation, acting as an implicit low-pass filter. This leak rate hyperparameter enables the reservoir to integrate information over much longer time spans, making it highly effective for modeling slowly changing time-series.
+
+Another significant modification involves output feedback connections~\cite{Lukosevicius2007}. While standard RC only reads from the reservoir, adding feedback from the trained readout back into the reservoir state allows the network to be driven by its own previous predictions. This closed-loop setup is crucial for autonomous sequence generation and stabilizing the emulation of chaotic systems.
+
+In recent years, the paradigm has even shifted beyond neural networks with Next-Generation Reservoir Computing (NGRC)~\cite{Gauthier_2021}. NGRC replaces the recurrent neural nodes entirely with a mathematically equivalent nonlinear vector autoregression, using polynomial feature expansions of past inputs. This approach requires a fraction of the data and computational power, possesses far fewer hyperparameters, yet achieves equivalent or superior performance on complex forecasting tasks.
+
+The mathematical simplicity of maintaining a fixed, random dynamical system has also spurred the field of Physical Reservoir Computing. Instead of simulating a network in software, physical systems with complex dynamics can be used to project inputs into a high-dimensional space. A landmark example by \cite{Brunner2013ParallelPI} demonstrated that photonic systems, such as delay-coupled lasers, can act as ultra-fast, energy-efficient reservoirs, processing information at gigahertz speeds directly in hardware.
+
 % \subsection{Gradient-Based Training of the Readout}
 %   - Contrast the analytic ridge-regression readout with gradient-based
 %     cross-entropy training (which is what this thesis and the AERC paper
@@ -197,34 +230,56 @@ Using an analytic solution is an extremely compelling part of RC, using computat
 %   - Explain why gradient-based training is necessary when the loss is
 %     cross-entropy (discrete output tokens) rather than MSE.
 % ----------------------------------------------------------------
+\subsection{Gradient-Based Training of the Readout}
+As mentioned earlier, one of the most attractive aspects of standard RC is the use of ridge regression to fit the readout, which improves accuracy while significantly reducing computational requirements and training time.
+Ridge regression improves upon linear regression by adding a penalty term proportional to the square of the coefficients ($L_2$ regularization):
+\[ \text{minimize } \|\mathbf{y} - \mathbf{X}\mathbf{w}\|^2 + \lambda \|\mathbf{w}\|^2 \]
+where $\lambda$ is the penalty strength. Ridge regression reduces overfitting, but most importantly, it has an exact analytical solution:
+\[ \hat{\mathbf{w}}_{\text{ridge}} = (\mathbf{X}^T\mathbf{X} + \lambda\mathbf{I})^{-1}\mathbf{X}^T\mathbf{y} \]
+This analytical tractability is a primary reason RC excels in continuous time series prediction, but it traditionally falls short on classification or discrete prediction tasks. The standard loss function for classification, cross-entropy, involves nonlinearities that prevent a closed-form analytical solution, and therefore requires gradient-based optimization. This is because the objective function is transcendental, meaning it involves both linear and non-linear terms that cannot be inverted to isolate $\mathbf{W}_{out}$. In particular, the softmax normalization
+\[
+  \hat{y}_k = \frac{e^{\mathbf{w}_k \cdot \mathbf{x}}}{\sum_{j=1}^{C} e^{\mathbf{w}_j \cdot \mathbf{x}}}
+\]
+couples the classes in the denominator. This means that searching for a global minimum by setting the gradient to zero yields
+\[
+  \nabla_{\mathbf{w}} L = \sum (\hat{\mathbf{y}} - \mathbf{y}_{\text{true}})\mathbf{x}^T = 0
+\]
+which prevents the isolation of $\mathbf{W}$.
 
 \section{Intrinsic Plasticity}
+\label{sec:ip}
 % TARGET: ~2.5 pages
 The Intrinsic Plasticity (IP) mechanism, first introduced in \cite{10.1007/11550822_11}, takes inpiration from a biological phenomenon called {\it homeostatic plasticity}, through which neurons autonomously adapt to stimuli. It is shown that neurons with an exponential firing rate distribution maximize information flow, and therefore neurons try to match such a distribution in-between their biological constraints.
 As a biological learning rule it differs from other commonly known phenomenon such as hebbian learning and synaptic plasticity because it modify the neuron properties rather than its connections (synapses) as shown in \cite{destexhe2004plasticity}.
 
 The objective of the IP learning rule is the maximization of entropy in the neuron output distribution, which is equivalent to the maximization of information flowing through it. Because we use the hyperbolic tangent nonlinearity, this means pushing neurons output towards a gaussian distribution
-$$p_{\text{norm}}(y) = \frac{1}{\sqrt{2\pi}\sigma} \exp\left(-\frac{(y-\mu)^2}{2\sigma^2}\right)$$
+\[
+  p_{\text{norm}}(y) = \frac{1}{\sqrt{2\pi}\sigma} \exp\left(-\frac{(y-\mu)^2}{2\sigma^2}\right)
+\]
 of mean $\mu$, which is an hyperparameter.
 
 The Gaussian is the maximum-entropy distribution under a fixed mean and variance constraint, making it a principled target for neurons whose output is bounded in $[-1, 1]$. The IP rule achieves this by locally adapting two per-neuron parameters: a gain $a$, which controls the slope of the activation function, and a bias $b$, which shifts its operating point. The adaptation is performed online by minimizing the Kullback--Leibler divergence $D_{\text{KL}}(\tilde{p} \parallel p_{\text{norm}})$ between the empirical output distribution $\tilde{p}(y)$ and the desired Gaussian target, via stochastic gradient descent.
 
 The derived learning rules from~\cite{10.1016/j.neucom.2007.12.020} to obtain this objective are
-$$
+\[
   \Delta b = \eta \left(1 - \left(2 + \frac{1}{\mu}\right)y + \frac{y^2}{\mu}\right)
-$$
+\]
 
-$$
+\[
   \Delta a = \frac{\eta}{a} + \Delta b \cdot x
-$$
+\]
 
 where $\eta$ is the learning rate and $y = \tanh(ax + b)$ is the current neuron output. Crucially, these are purely local rules: $\Delta b$ depends only on the neuron's own output $y$, and $\Delta a$ additionally depends on the pre-activation input $x$, with no backpropagation required. This makes IP biologically plausible and computationally lightweight, as each neuron adapts independently and in an unsupervised manner. The gain $a$ effectively rescales the neuron's sensitivity to its inputs, while the bias $b$ shifts the distribution to match the target mean, together shaping the output statistics toward the desired Gaussian.
 
 This means that our RC dynamics become
 
-$$\text{pre\_act} = \mathbf{W}_{in} \mathbf{x}_t + \mathbf{W}_r \mathbf{h}_{t-1}$$
+\[
+  \text{pre\_act} = \mathbf{W}_{in} \mathbf{x}_t + \mathbf{W}_r \mathbf{h}_{t-1}
+\]
 
-$$\mathbf{h}_t=\tanh(a\cdot\text{pre\_act}+b)$$
+\[
+  \mathbf{h}_t = \tanh(a \cdot \text{pre\_act} + b)
+\]
 
 where $a$ and $b$ are the bias and gain added by the IP mechanism.
 
@@ -255,7 +310,72 @@ This mechanism is especially useful in reservoir computing, as the reservoir is 
 
 \section{Attention-Enhanced RC}
 % TARGET: ~2.5 pages
-The Attention-Enhanced RC architecture description
+In this section we describe the Attention-Enhanced RC architecture, the motivations behind its development and how it compares to traditional RC. We then describe the structure in greater detail and more rigorously to explain its inner workings.
+
+\subsection{Motivation: from Fixed to Dynamic Readout}
+As already mentioned, one attractive feature of RC is the fixed, linear readout that can be learned analytically offline. While this has many benefits, it also comes with drawbacks. Firstly, it greatly limits the flexibility of the model, which is not able to adapt its weights and therefore does not exhibit in-context learning capabilities. Secondly, ridge regression needs to compute the inverse of $(\mathbf{X}\mathbf{X}^T + \lambda\mathbf{I})$, where $\mathbf{X}$ is the matrix of collected reservoir states of size $N\times T$, with $N$ the reservoir size and $T$ the number of training samples. Memory for this computation scales quadratically ($\mathcal{O}(N^2)$), which is not a problem for small time-series tasks, but quickly becomes unfeasible for models with billions of parameters that are increasingly common in language modeling.
+Gradient methods obviously do not encounter this problem as they are inherently iterative and use batching.
+Following this reasoning, it was only natural to use a different approach for the readout. AERC solves both problems while remaining memory-efficient and scalable. The network feeds the RC states to a small feedforward neural network to generate dynamic attention weights that attend to different reservoir states based on context. This approach utilizes the reservoir to avoid the growing KV-cache, giving the model a limited but vastly cheaper memory.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.8\textwidth]{images/aerc.drawio.pdf}
+  \caption{The Attention-Enhanced Reservoir Computing (AERC) architecture. The input and reservoir remain the same as Figure~\ref{fig:rc-architecture}, while we now have the feedforward layer (in yellow) producing the attention weights for the reservoir states. Using gradient methods also means that cross-entropy loss is now viable.}
+  \label{fig:aerc}
+\end{figure}
+
+\subsection{Architecture}
+The AERC model is composed of a fixed reservoir, identical in structure to that of a standard ESN, followed by a small trainable attention network that produces a dynamic, input-dependent readout. The forward pass proceeds in five stages.
+
+\paragraph{Input Embedding.}
+Each input token $x_t \in \{1, \ldots, V\}$ is first mapped to a continuous embedding vector by a fixed, randomly initialized embedding matrix $\mathbf{E} \in \mathbb{R}^{V \times d_e}$:
+\[
+  \mathbf{e}_t = \mathbf{E}_{x_t} \in \mathbb{R}^{d_e}
+\]
+The embedding weights are frozen and receive no gradient updates, preserving the RC philosophy of keeping the input projection untrained.
+
+\paragraph{Reservoir.}
+The sequence of embeddings $(\mathbf{e}_1, \ldots, \mathbf{e}_T)$ is passed through a fixed recurrent reservoir of $N$ neurons. The state update at each timestep follows the standard ESN equation:
+\[
+  \mathbf{h}_t = \tanh\!\left(\mathbf{W}_{in}\,\mathbf{e}_t + \mathbf{W}_r\,\mathbf{h}_{t-1}\right)
+\]
+where $\mathbf{W}_{in} \in \mathbb{R}^{N \times d_e}$ is the fixed input weight matrix and $\mathbf{W}_r \in \mathbb{R}^{N \times N}$ is the fixed recurrent weight matrix. Both matrices are randomly initialized and never updated. The recurrent weights are scaled so that the spectral radius $\rho(\mathbf{W}_r) < 1$, ensuring the Echo State Property holds and the reservoir dynamics are input-driven rather than dominated by initial conditions.
+
+\paragraph{Normalization.}
+Before being passed to the attention network, the reservoir states may optionally be normalized. In the base configuration an identity mapping is applied, leaving the states unchanged. In an ablation variant, RMSNorm~\cite{zhang2019root} is applied:
+\[
+  \tilde{\mathbf{h}}_t = \text{RMSNorm}(\mathbf{h}_t) = \frac{\mathbf{h}_t}{\sqrt{\frac{1}{N}\sum_{i=1}^{N} h_{t,i}^2}} \odot \boldsymbol{\gamma}
+\]
+where $\boldsymbol{\gamma} \in \mathbb{R}^N$ is a learned scale vector. The role of this normalization with respect to the IP mechanism is explored in Section~\ref{sec:rmsnorm}.
+
+\paragraph{Attention Weight Generation.}
+The normalized state $\tilde{\mathbf{h}}_t$ is passed through a small two-layer feedforward network, the \textit{gate network}, which generates a context-dependent attention weight matrix:
+\begin{align}
+  \mathbf{g}_t       & = \text{ReLU}\!\left(\mathbf{W}_{gate}\,\tilde{\mathbf{h}}_t + \mathbf{b}_{gate}\right) \in \mathbb{R}^H \\
+  \mathbf{W}_{att,t} & = \left(\mathbf{W}_{out}\,\mathbf{g}_t + \mathbf{b}_{out}\right)\in \mathbb{R}^{H \times N}
+\end{align}
+where $\mathbf{W}_{gate} \in \mathbb{R}^{H \times N}$ and $\mathbf{W}_{out} \in \mathbb{R}^{HN \times H}$ are trainable weight matrices and $H \ll N$ is the attention subspace dimension. Unlike standard self-attention, this mechanism does not compute any key-query dot products; instead it generates a full attention weight matrix conditioned only on the current reservoir state.
+
+\paragraph{Attention Projection and Readout.}
+The generated attention weight matrix $\mathbf{W}_{att,t}$ is then applied to the raw reservoir state $\mathbf{h}_t$ (not the normalized version) to produce a compressed context vector:
+\[
+  \mathbf{r}_t = \mathbf{W}_{att,t}\,\mathbf{h}_t \in \mathbb{R}^H
+\]
+This operation attends over the $N$ reservoir dimensions and projects them down to the $H$-dimensional subspace. The context vector $\mathbf{r}_t$ is finally passed through a linear readout layer to produce the output logits over the vocabulary:
+\[
+  \hat{\mathbf{y}}_t = \mathbf{W}_{readout}\,\mathbf{r}_t + \mathbf{b}_{readout} \in \mathbb{R}^V
+\]
+The model is trained end-to-end by minimizing the cross-entropy loss between the predicted logits and the true next-token labels using the AdamW optimizer.
+
+\paragraph{Trainable Parameters.}
+Only the gate network and readout are trainable; the embedding and reservoir are fixed. The total number of trainable parameters is therefore:
+\[
+  |\theta| = \underbrace{N \cdot H + H}_{\text{gate}} + \underbrace{H \cdot (H \cdot N) + H \cdot N}_{\text{out}} + \underbrace{H \cdot V + V}_{\text{readout}}
+\]
+With the reference hyperparameters $V=65$, $d_e=16$, $N=160$ and $H=30$, this yields approximately 155{,}000 trainable parameters, comparable to the architecture reported in~\cite{koster2024attentionenhancedreservoircomputing}.
+
+\subsection{Results from the original paper}
+TODO make the image or the base aerc architecture
 
 % ----------------------------------------------------------------
 % TODO (Section 2.3 — ~2.5 pages):
@@ -310,6 +430,7 @@ The Attention-Enhanced RC architecture description
 % ============================================================
 % CHAPTER 3 — METHODOLOGY  (~9 pages)
 % ============================================================
+
 \chapter{Methodology}
 % ----------------------------------------------------------------
 % TODO (Chapter 3 opening — ~0.5 page):
@@ -319,210 +440,156 @@ The Attention-Enhanced RC architecture description
 %   Mention that all experiments share the same codebase and random
 %   seed protocol for reproducibility.
 % ----------------------------------------------------------------
+In this chapter we discuss the implementation of the AERC architecture, the data preprocessing and the structural choices for the reservoir and attention parts of the network. Then the specifics of the IP implementation, especially the supervised and unsupervised difference. After the IP specifics we also compare it to RMSNormalization\cite{zhang2019root}, to better understand its role. Lastly we briefly describe the hyperparameter search used for these models.
 
 \section{AERC architecture implementation}
 \label{sec:aerc-impl}
 % TARGET: ~2 pages
 % The AERC Logits generation, AdamW optimizer, and learning rate schedule.
 % rmsnorm vs identity
-The specific architecture choosen follow closely from the AERC original paper \cite{koster2024attentionenhancedreservoircomputing} where the author trained multiple architectures of variable size, with the biggest having 155000 trainable parameters. To compare the results we adopt the same architecture as described in the study, a vocabulary size of $V = 65$ based on the tiny\_shakespeare \cite{karpathy2015charRnn} dataset, an embedding dimension $d_e = 16$ and reservoir size $N$ of 160.
+The specific architecture chosen follows closely from the AERC original paper~\cite{koster2024attentionenhancedreservoircomputing}, where the authors trained multiple architectures of variable size, with the largest having 155{,}000 trainable parameters. To compare results directly, we adopt the same configuration: a vocabulary size of $V = 65$ derived from the Tiny Shakespeare~\cite{karpathy2015charRnn} dataset, an embedding dimension $d_e = 16$, a reservoir of $N = 160$ neurons, and an attention hidden dimension $H = 30$.
 The model is trained to predict the next character in a sequence by minimizing the cross-entropy loss
-$$H(y, \hat{y}) = -\sum_i y_i \log({\hat{y_i}})$$
-where $\hat{y}$ are the output logits and $y$ the true label. We apply the softmax function to obtain the output probabilities (not explicitly stated in the code, Pytorch\cite{Paszke2019PyTorch} applies softmax implicitly). The training is done using backpropagation and the AdamW optimizer\cite{loshchilov2019decoupledweightdecayregularization}, a standard variant of stochastic gradient descent. Miny batches of size 32 are used for efficiency.
+\[
+  H(y, \hat{y}) = -\sum_i y_i \log(\hat{y}_i)
+\]
+where $\hat{y}$ are the output logits and $y$ the true one-hot label. PyTorch~\cite{Paszke2019PyTorch} applies the softmax normalization implicitly inside \texttt{F.cross\_entropy}, so the model's readout layer produces raw logits.
 
-% ----------------------------------------------------------------
-% TODO (Section 3.1 continuation — ~1.5 pages):
-%
-% \subsection{Dataset and Preprocessing}
-%   - Tiny Shakespeare \cite{karpathy2015charRnn}: ~1.1M characters,
-%     vocabulary $V=65$ (upper+lower case + punctuation).
-%   - Train / validation split: describe the exact split used
-%     (e.g., first 90\% training, last 10\% validation).
-%   - Context window (sequence length): 32 characters.
-%   - Describe the CharDataset class: sliding window of length 32,
-%     target is next character at each position.
-%
-% \subsection{Reservoir Initialisation}
-%   - Embedding $\mathbf{W}_{in}$: random uniform, fixed, not trained.
-%   - Reservoir $\mathbf{W}_r$: random, then rescaled so that
-%     $\rho(\mathbf{W}_r) = 0.95$ (the default spectral radius).
-%   - Explain why the spectral radius is clamped: ensures ESP
-%     (see Section~\ref{sec:esp}).
-%
-% \subsection{Attention Network and Readout}
-%   - \texttt{net\_gate}: Linear($N$, $H$) + ReLU
-%   - \texttt{net\_out}:  Linear($H$, $H \times N$)
-%   - \texttt{readout}:   Linear($H$, $V$)
-%   - Table showing layer dimensions and parameter counts:
-%
-% \begin{table}[h]
-%   \centering
-%   \caption{Trainable parameter breakdown for the 155k AERC model
-%            ($N=160$, $H=30$, $V=65$).}
-%   \label{tab:param-count}
-%   \begin{tabular}{lrr}
-%     \toprule
-%     Component & Shape & Parameters \\
-%     \midrule
-%     Gate (\texttt{net\_gate})    & $160 \times 30$      & 4{,}800 \\
-%     Output (\texttt{net\_out})   & $30 \times 4{,}800$  & 144{,}000 \\
-%     Readout (\texttt{readout})   & $30 \times 65$       & 1{,}950 \\
-%     IP gain $a$                  & $1 \times 160$       & 160      \\
-%     IP bias $b$                  & $1 \times 160$       & 160      \\
-%     \midrule
-%     Total (with IP)              &                      & $\approx$155{,}k \\
-%     \bottomrule
-%   \end{tabular}
-% \end{table}
-%
-% \subsection{Training Schedule}
-%   - AdamW: $\beta_1=0.9$, $\beta_2=0.999$, $\varepsilon=10^{-8}$,
-%     weight decay $\lambda=0.01$.
-%   - Learning rate: specify the value used and whether a scheduler
-%     (cosine decay, warmup) was applied.
-%   - Number of epochs and batch size.
-%   - Hardware: describe the GPU / ROCm environment used.
-% ----------------------------------------------------------------
+\subsection{Dataset and Preprocessing}
+All experiments use the Tiny Shakespeare corpus~\cite{karpathy2015charRnn}, a concatenation of Shakespeare plays totalling approximately 1.1 million characters. The vocabulary consists of $V = 65$ unique characters. The dataset follows a 90/10 train/test split.
+
+For each training sample, a sliding window of length $T = 128$ characters is extracted from the corpus. The input sequence is $\mathbf{x} = (x_1, \ldots, x_T)$ and the target is the sequence shifted by one position, $\mathbf{y} = (x_2, \ldots, x_{T+1})$, so the model learns to predict each next character given all preceding characters in the window. Mini-batches of size 32 are drawn with random shuffling at each epoch.
+
+\subsection{Reservoir Initialisation}
+The input embedding matrix $\mathbf{E} \in \mathbb{R}^{V \times d_e}$ is initialized with PyTorch's default uniform initialization and immediately frozen; its weights receive no gradient updates throughout training.
+
+The recurrent reservoir $\mathbf{W}_r \in \mathbb{R}^{N \times N}$ is initialized as a random matrix and then rescaled so that its spectral radius equals the target value $\rho(\mathbf{W}_r) = 0.95$. This rescaling is performed once before training by computing the dominant eigenvalue via \texttt{torch.linalg.eigvals} and multiplying all entries by the ratio $\rho_{\text{target}} / \rho_{\text{current}}$. As discussed in Section~\ref{sec:aerc-impl}, keeping the spectral radius strictly below 1 is the standard sufficient condition for the Echo State Property. The reservoir weights are also frozen after this initialization step.
+
+\subsection{Attention Network and Readout}
+The three trainable components of the model are the gate network, the output mapping, and the final readout layer. Their shapes and parameter counts are summarized in Table~\ref{tab:param-count}.
+
+\begin{table}[h]
+  \centering
+  \caption{Trainable parameter breakdown for the AERC model ($N=160$, $H=30$, $V=65$).}
+  \label{tab:param-count}
+  \begin{tabular}{lrr}
+    \toprule
+    Component                          & Shape                             & Parameters \\
+    \midrule
+    Gate (\texttt{net\_gate}) weights  & $N \times H = 160 \times 30$      & 4{,}800    \\
+    Gate (\texttt{net\_gate}) bias     & $H = 30$                          & 30         \\
+    Output (\texttt{net\_out}) weights & $H \times HN = 30 \times 4{,}800$ & 144{,}000  \\
+    Output (\texttt{net\_out}) bias    & $HN = 4{,}800$                    & 4{,}800    \\
+    Readout weights                    & $H \times V = 30 \times 65$       & 1{,}950    \\
+    Readout bias                       & $V = 65$                          & 65         \\
+    \midrule
+    Total (base model)                 &                                   & 155{,}645  \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Training Schedule}
+All models are optimized using AdamW~\cite{loshchilov2019decoupledweightdecayregularization} with $\beta_1 = 0.9$, $\beta_2 = 0.95$, and weight decay $\lambda = 10^{-3}$. The base learning rate is set to $5 \times 10^{-3}$ and is modulated by a three-phase schedule: a linear warmup over the first 150 steps, followed by a cosine decay over the middle phase, and a linear cooldown over the final 300 steps down to a minimum of $10\%$ of the peak learning rate. Gradient norms are clipped to a maximum of 1.0 to prevent training instabilities. All models are trained for 2{,}000 gradient steps. Training is performed on a GPU using the ROCm software stack, with bfloat16 mixed precision to reduce memory usage. A fixed random seed of 42 is used for all experiments to ensure reproducibility.
 
 \section{IP implementation}
 \label{sec:ip-impl}
-% TARGET: ~2.5 pages
-% implementation of the IP mechanism
-% - unsupervised - Unsupervised information-theoretic adjustment of gain $a$ and bias $b$ to match the Gaussian target distribution.
-% - supervised fine-tuning - Comparing purely local unsupervised IP (frozen during backpropagation) vs. supervised BPTT fine-tuning of the gain and bias.
+The IP mechanism is implemented as an offline pre-training phase that precedes the main gradient-based training. The per-neuron gain $a \in \mathbb{R}^N$ and bias $b \in \mathbb{R}^N$ vectors are registered as trainable \texttt{nn.Parameter} objects, initialized to $a = \mathbf{1}$ and $b = \mathbf{0}$, so that the reservoir dynamics are initially identical to those of the base AERC model.
 
-% ----------------------------------------------------------------
-% TODO (Section 3.2 — ~2.5 pages):
-%
-% \subsection{Unsupervised IP Pre-training}
-%   - Describe the \texttt{pretrain\_reservoir\_ip()} function:
-%     * Iterates over sequential slices of the training corpus
-%       (ip\_chars characters per epoch, nepochs epochs).
-%     * For each time step $t$, computes the reservoir pre-activation
-%       and applies the IP update rules for $\Delta a$ and $\Delta b$.
-%     * $a$ is clamped to $\geq 10^{-4}$ to avoid collapse.
-%   - Key hyperparameters: $\eta$ (IP learning rate), $\mu$ (target
-%     mean, typically 0), $\sigma$ (target std, recommended 0.5–0.6).
-%   - After pre-training, $a$ and $b$ are registered as \texttt{nn.Parameter}
-%     but the reservoir weights $\mathbf{W}_r$ remain frozen.
-%
-% \subsection{Gradient-Based Fine-Tuning of IP Parameters}
-%   - Second variant: instead of freezing $a$ and $b$ during main
-%     training, allow backpropagation to update them via BPTT.
-%   - This adds only $2N = 320$ trainable scalars (+0.3\% of total
-%     parameters for the 155k model).
-%   - The gradient signal flows through \texttt{\_reservoir\_scan\_ip}
-%     (a \texttt{torch.compile}'d kernel) which applies
-%     $h_t = \tanh(a \cdot \text{pre\_act} + b)$ at each step.
-%   - Distinguish from the frozen variant: in the frozen variant the
-%     IP pre-training is an offline initialisation step, while here
-%     $a$ and $b$ co-adapt with the attention network weights online.
-%
-% \subsection{Models Compared}
-%   Define the four model variants used in the experiments:
-%   \begin{enumerate}
-%     \item \textbf{Base}: original AERC, $a \equiv 1$, $b \equiv 0$,
-%           no RMSNorm.
-%     \item \textbf{Base+Norm}: AERC with RMSNorm on reservoir states.
-%     \item \textbf{IP-frozen}: AERC with unsupervised IP pre-training;
-%           $a$, $b$ frozen during backprop.
-%     \item \textbf{IP-gradient}: AERC with IP initialisation + gradient
-%           fine-tuning of $a$ and $b$.
-%   \end{enumerate}
-%   (These correspond to the four curves in the comparison plots in
-%   \texttt{base/aerc\_four\_way\_comparison.png} and
-%   \texttt{base/aerc\_three\_way\_comparison.png}.)
-% ----------------------------------------------------------------
+\subsection{Unsupervised IP Pre-training}
+The IP pre-training is implemented in the \texttt{pretrain\_reservoir\_ip()} function, which adapts $a$ and $b$ by applying the IP update rules of Section~\ref{sec:ip} to sequential slices of the training corpus, with no access to the attention network or output labels. Each pre-training epoch processes a non-overlapping block of \texttt{ip\_chars} characters, so that multiple epochs together cover a diverse portion of the training data without repetition. For the experiments in this thesis, the pre-training is run for 10 epochs over 10{,}000 characters per epoch, covering 100{,}000 unique characters in total.
+
+At each timestep $t$ within an epoch, the function computes the pre-activation of the reservoir
+\[
+  \text{pre\_act}_t = \mathbf{W}_{in}\,\mathbf{e}_t + \mathbf{W}_r\,\mathbf{h}_{t-1}
+\]
+and then applies the current gain and bias to obtain the neuron output $\mathbf{y}_t = \tanh(a \odot \text{pre\_act}_t + b)$. The IP update rules are then applied:
+\[
+  \Delta b = -\eta \left(-\frac{\mu}{\sigma^2} + \frac{y}{\sigma^2}\left(2\sigma^2 + 1 - y^2 + \mu y\right)\right)
+\]
+\[
+  \Delta a = \frac{\eta}{a} + \Delta b \odot \text{pre\_act}
+\]
+where $\eta$ is the IP learning rate, $\mu$ is the target mean, and $\sigma$ is the target standard deviation of the neuron output distribution. The updates are averaged over the batch dimension and applied in place. The gain is clamped to $a \geq 10^{-4}$ after each update to prevent numerical collapse. Critically, no backpropagation through the attention network occurs during this phase: all reservoir weights $\mathbf{W}_{in}$ and $\mathbf{W}_r$ remain frozen.
+
+The best IP hyperparameters found by the grid search (Section~\ref{sec:grid-search}) are $\eta = 10^{-5}$, $\mu = -0.1$, and $\sigma = 0.3$, with an IP learning rate of $10^{-5}$.
+
+\subsection{Gradient-Based Fine-Tuning of IP Parameters}
+In addition to the purely unsupervised pre-training described above, we evaluate a second variant in which the gain $a$ and bias $b$ are not frozen after pre-training but instead remain as trainable parameters throughout the main gradient descent phase. In this \textit{IP-gradient} variant, the gradient signal flows through a compiled reservoir scan kernel,
+\[
+  \mathbf{h}_t = \tanh(a \odot (\mathbf{W}_{in}\,\mathbf{e}_t + \mathbf{W}_r\,\mathbf{h}_{t-1}) + b)
+\]
+allowing backpropagation through time (BPTT) to co-adapt $a$ and $b$ together with the attention network. This adds only $2N = 320$ additional trainable scalars to the model, a negligible increase of $0.2\%$ over the base parameter count.
+
+The key distinction between the two variants is therefore the following: in the \textit{IP-frozen} variant, the IP pre-training acts as a principled, biologically-inspired initializer for the reservoir output distribution, and the IP parameters are then fixed; in the \textit{IP-gradient} variant, this initialization serves as a warm start, after which $a$ and $b$ are further refined by the supervised cross-entropy objective.
+
+\subsection{Model Variants}
+Four model configurations are evaluated and compared throughout this thesis:
+\begin{enumerate}
+  \item \textbf{Base}: the original AERC with $a \equiv 1$, $b \equiv 0$, and no normalization on reservoir states.
+  \item \textbf{Base+Norm}: AERC with RMSNorm applied to reservoir states before the gate network, but no IP.
+  \item \textbf{IP-frozen}: AERC with unsupervised IP pre-training; $a$ and $b$ are frozen during backpropagation.
+  \item \textbf{IP-gradient}: AERC with IP pre-training followed by gradient fine-tuning of $a$ and $b$ via BPTT.
+\end{enumerate}
+All four models share the same architecture, dataset, and training schedule; only the normalization and IP configuration differs.
 
 \section{IP and RMSNormalization}
 \label{sec:rmsnorm}
-% TARGET: ~1.5 pages
-% small ablation on state normalization
-% 4-way comparison evaluating the impact of RMSNorm on model representations and convergence speed for both the Base and IP architectures.
+Both IP and RMSNorm~\cite{zhang2019root} act on the reservoir state before the attention gate, and both aim to regularize the scale of neuron outputs. This raises a natural question: are they redundant, or do they complement each other?
 
-% ----------------------------------------------------------------
-% TODO (Section 3.3 — ~1.5 pages):
-%
-% \subsection{Motivation}
-%   - RMSNorm \cite{zhang2019root} normalises activations by their
-%     root-mean-square: $\text{RMSNorm}(x) = x / \text{RMS}(x) \cdot \gamma$.
-%   - Applied to reservoir states before the attention gate, it
-%     standardises the scale of the inputs to the attention network.
-%   - Hypothesis: if RMSNorm already corrects the output scale of each
-%     reservoir neuron, the additional IP bias/gain may be redundant.
-%
-% \subsection{Experimental Design}
-%   - 4-way comparison: {Base, Base+Norm, IP-frozen, IP-gradient}
-%     (add RMSNorm citation here if you choose to add it to references.bib).
-%   - Identical hyperparameters across all four conditions; only the
-%     normalisation / IP flag differs.
-%   - Report validation cross-entropy loss after the same number of
-%     gradient steps.
-%
-% \subsection{Results Preview}
-%   Forward-reference to Section~\ref{sec:results-normablation}
-%   for the quantitative outcome.  One sentence summary here.
-% ----------------------------------------------------------------
+\subsection{Motivation}
+RMSNorm normalizes a vector $\mathbf{x}$ by dividing by its root mean square and then applying a learned per-element scale:
+\[
+  \text{RMSNorm}(\mathbf{x}) = \frac{\mathbf{x}}{\sqrt{\frac{1}{N}\sum_{i=1}^{N} x_i^2}} \odot \boldsymbol{\gamma}
+\]
+where $\boldsymbol{\gamma} \in \mathbb{R}^N$ is a trainable scale vector. When applied to the reservoir states before the gate network, RMSNorm standardizes the magnitude of the inputs to the attention network at every step, which can improve gradient flow and convergence stability.
+
+IP, on the other hand, adjusts each neuron's gain and bias based on an information-theoretic criterion (maximizing entropy toward a Gaussian target), and does so offline before the gradient training phase begins. While the two mechanisms both modify the effective scale and mean of reservoir activations, they do so in fundamentally different ways: RMSNorm is a differentiable, data-driven operation applied at inference time, whereas IP is a local, unsupervised pre-training rule that shapes the reservoir's intrinsic dynamics before the attention network ever sees any output.
+
+The hypothesis motivating this ablation is that if RMSNorm already corrects the output scale of reservoir neurons, the additional benefit of IP pre-training may be reduced or eliminated. Conversely, if IP shapes the distribution in a way that is not captured by second-moment normalization alone (for example, by shifting the mean or improving the utilization of the tanh's linear region), then the two mechanisms should be complementary.
+
+\subsection{Experimental Design}
+To test this hypothesis, we run the four model variants defined in Section~\ref{sec:ip-impl} — Base, Base+Norm, IP-frozen, and IP-gradient — under identical hyperparameters, varying only the normalization and IP flags. All models are trained for 2{,}000 steps with the same optimizer, learning rate schedule, and random seed. Validation cross-entropy loss is reported at each evaluation interval and compared across conditions. The quantitative results and discussion are presented in Section~\ref{ch:results}.
 
 \section{Hyperparameter Grid Search}
 \label{sec:grid-search}
-% TARGET: ~1.5 pages
-% description of hyperparameters sweep
-% search over reservoir settings (spectral radius, size $N$), attention projection sizes ($H$), and IP parameters (target mean $\mu$, standard deviation $\sigma$, and pre-training steps).
+To select the best IP target distribution parameters, we perform a grid search over the IP target mean $\mu$ and standard deviation $\sigma$. All other hyperparameters are fixed at the values described in Section~\ref{sec:aerc-impl}. The search focuses on the IP-gradient model variant, as it combines unsupervised pre-training with gradient fine-tuning and is therefore most sensitive to the quality of the initial IP configuration.
 
-% ----------------------------------------------------------------
-% TODO (Section 3.4 — ~1.5 pages):
-%
-% \subsection{Search Space}
-%   Present the grid as a table.  The 9 configurations recorded in
-%   \texttt{base/grid\_results.json} swept:
-%   - Learning rate: 0.005
-%   - IP sigma ($\sigma$): \{0.2, 0.3, 0.4\}
-%   - IP mu ($\mu$): \{-0.1, 0.0, 0.1\}
-%   - Spectral radius: 0.98
-%   All other hyperparameters were fixed (see Section~\ref{sec:aerc-impl}).
-%
-%   \begin{table}[h]
-%     \centering
-%     \caption{Hyperparameter grid search results ($N=160$, $H=30$,
-%              spectral radius 0.98, $\eta=0.005$).}
-%     \label{tab:grid-results}
-%     \begin{tabular}{ccc r}
-%       \toprule
-%       $\sigma$ & $\mu$ & Spectral radius & Val.\ loss (IP) \\
-%       \midrule
-%       0.3 & $-$0.1 & 0.98 & 1.711 \\
-%       0.3 &    0.0 & 0.98 & 1.716 \\
-%       0.3 &    0.1 & 0.98 & 1.726 \\
-%       0.4 & $-$0.1 & 0.98 & 1.718 \\
-%       0.4 &    0.0 & 0.98 & 1.727 \\
-%       0.4 &    0.1 & 0.98 & 1.732 \\
-%       0.2 & $-$0.1 & 0.98 & 1.717 \\
-%       0.2 &    0.0 & 0.98 & 1.731 \\
-%       0.2 &    0.1 & 0.98 & 1.733 \\
-%       \bottomrule
-%     \end{tabular}
-%   \end{table}
-%
-% \subsection{Selection Criterion}
-%   Explain how the best configuration was selected (lowest validation
-%   loss).  Best: $\sigma=0.3$, $\mu=-0.1$, val loss = 1.711.
-%
-% \subsection{Observations}
-%   - Lower $\mu$ (slight negative target mean) consistently performs
-%     better; discuss a possible reason (asymmetric activation range of
-%     $\tanh$, or the distribution of Shakespeare character embeddings).
-%   - Smaller $\sigma$ (tighter target distribution) is generally better
-%     for the attention head, which benefits from more uniform reservoir
-%     activation levels.
-%   - Variation across the grid is modest (~0.02 nats), suggesting IP
-%     performance is robust to the exact target distribution parameters
-%     within the tested range.
-% ----------------------------------------------------------------
+\subsection{Search Space}
+The grid sweeps over $\sigma \in \{0.2, 0.3, 0.4\}$ and $\mu \in \{-0.1, 0.0, 0.1\}$, for a total of 9 configurations. The spectral radius is fixed at $\rho = 0.98$ and the learning rate at $5 \times 10^{-3}$ for all runs. The results are summarized in Table~\ref{tab:grid-results}.
+
+\begin{table}[h]
+  \centering
+  \caption{Hyperparameter grid search results for the IP-gradient model ($N=160$, $H=30$, spectral radius 0.98, $\eta=5\times10^{-3}$). Validation loss is reported after 2{,}000 training steps.}
+  \label{tab:grid-results}
+  \begin{tabular}{ccr}
+    \toprule
+    $\sigma$ & $\mu$  & Val.\ loss     \\
+    \midrule
+    0.3      & $-$0.1 & \textbf{1.711} \\
+    0.2      & $-$0.1 & 1.717          \\
+    0.4      & $-$0.1 & 1.718          \\
+    0.3      & 0.0    & 1.716          \\
+    0.4      & 0.0    & 1.727          \\
+    0.3      & 0.1    & 1.726          \\
+    0.2      & 0.0    & 1.731          \\
+    0.4      & 0.1    & 1.732          \\
+    0.2      & 0.1    & 1.733          \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Selection Criterion and Observations}
+The best configuration is selected by lowest validation cross-entropy loss, yielding $\sigma = 0.3$ and $\mu = -0.1$ with a validation loss of 1.711. These values are used for all IP experiments reported in Chapter~\ref{ch:results}.
+
+Several trends emerge from the grid. First, a slightly negative target mean ($\mu = -0.1$) consistently outperforms $\mu = 0.0$ and $\mu = 0.1$ across all values of $\sigma$. A possible explanation is that the $\tanh$ activation is asymmetric around zero in practice: the character embeddings fed to the reservoir are not centered, so a small negative shift of the neuron output distribution may better align the reservoir dynamics with the distribution of the input data.
+
+Second, the intermediate value $\sigma = 0.3$ performs best, with both smaller ($\sigma = 0.2$) and larger ($\sigma = 0.4$) values yielding slightly worse results. A tighter target distribution ($\sigma = 0.3$) constrains reservoir neuron outputs to a narrower range, which may provide a more uniform and discriminative set of features for the attention gate; however, an overly tight distribution ($\sigma = 0.2$) may compress the reservoir's expressivity too much.
+
+Finally, the total variation across the grid is modest, approximately 0.02 nats, suggesting that IP performance is robust to the exact choice of target distribution parameters within the range tested.
 
 % ============================================================
 % CHAPTER 4 — RESULTS  (~8 pages)
 % ============================================================
+
 \chapter{Results}
 \label{ch:results}
 % ----------------------------------------------------------------
