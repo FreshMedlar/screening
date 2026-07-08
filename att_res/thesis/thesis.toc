@@ -1,37 +1,42 @@
 \contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}%
-\contentsline {chapter}{\numberline {2}Literature Review}{3}{chapter.2}%
-\contentsline {section}{\numberline {2.1}Reservoir Computing}{3}{section.2.1}%
-\contentsline {subsection}{\numberline {2.1.1}Echo State Property}{4}{subsection.2.1.1}%
-\contentsline {subsection}{\numberline {2.1.2}Reservoir Extensions}{5}{subsection.2.1.2}%
-\contentsline {subsection}{\numberline {2.1.3}Gradient-Based Training of the Readout}{6}{subsection.2.1.3}%
-\contentsline {section}{\numberline {2.2}Intrinsic Plasticity}{6}{section.2.2}%
-\contentsline {section}{\numberline {2.3}Attention-Enhanced RC}{8}{section.2.3}%
-\contentsline {subsection}{\numberline {2.3.1}Motivation: from Fixed to Dynamic Readout}{8}{subsection.2.3.1}%
-\contentsline {subsection}{\numberline {2.3.2}Architecture}{9}{subsection.2.3.2}%
-\contentsline {paragraph}{Input Embedding.}{9}{section*.4}%
-\contentsline {paragraph}{Reservoir.}{9}{section*.5}%
-\contentsline {paragraph}{Normalization.}{9}{section*.6}%
-\contentsline {paragraph}{Attention Weight Generation.}{9}{section*.7}%
-\contentsline {paragraph}{Attention Projection and Readout.}{10}{section*.8}%
-\contentsline {paragraph}{Trainable Parameters.}{10}{section*.9}%
-\contentsline {subsection}{\numberline {2.3.3}Results from the original paper}{10}{subsection.2.3.3}%
-\contentsline {chapter}{\numberline {3}Methodology}{11}{chapter.3}%
-\contentsline {section}{\numberline {3.1}AERC architecture implementation}{11}{section.3.1}%
-\contentsline {subsection}{\numberline {3.1.1}Dataset and Preprocessing}{11}{subsection.3.1.1}%
-\contentsline {subsection}{\numberline {3.1.2}Reservoir Initialisation}{12}{subsection.3.1.2}%
-\contentsline {subsection}{\numberline {3.1.3}Attention Network and Readout}{12}{subsection.3.1.3}%
-\contentsline {subsection}{\numberline {3.1.4}Training Schedule}{12}{subsection.3.1.4}%
-\contentsline {section}{\numberline {3.2}IP implementation}{13}{section.3.2}%
-\contentsline {subsection}{\numberline {3.2.1}Unsupervised IP Pre-training}{13}{subsection.3.2.1}%
-\contentsline {subsection}{\numberline {3.2.2}Gradient-Based Fine-Tuning of IP Parameters}{14}{subsection.3.2.2}%
-\contentsline {subsection}{\numberline {3.2.3}Model Variants}{14}{subsection.3.2.3}%
-\contentsline {section}{\numberline {3.3}IP and RMSNormalization}{14}{section.3.3}%
-\contentsline {subsection}{\numberline {3.3.1}Motivation}{15}{subsection.3.3.1}%
-\contentsline {subsection}{\numberline {3.3.2}Experimental Design}{15}{subsection.3.3.2}%
-\contentsline {section}{\numberline {3.4}Hyperparameter Grid Search}{15}{section.3.4}%
-\contentsline {subsection}{\numberline {3.4.1}Search Space}{16}{subsection.3.4.1}%
-\contentsline {subsection}{\numberline {3.4.2}Selection Criterion and Observations}{16}{subsection.3.4.2}%
-\contentsline {chapter}{\numberline {4}Results}{17}{chapter.4}%
-\contentsline {chapter}{\numberline {5}Discussion}{19}{chapter.5}%
-\contentsline {chapter}{\numberline {6}Conclusion}{21}{chapter.6}%
-\contentsline {chapter}{Bibliography}{23}{section*.12}%
+\contentsline {paragraph}{Motivation}{2}{section*.2}%
+\contentsline {paragraph}{Contributions}{2}{section*.3}%
+\contentsline {paragraph}{Thesis Structure}{2}{section*.4}%
+\contentsline {chapter}{\numberline {2}Literature Review}{5}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Reservoir Computing}{5}{section.2.1}%
+\contentsline {subsection}{\numberline {2.1.1}Echo State Property}{6}{subsection.2.1.1}%
+\contentsline {subsection}{\numberline {2.1.2}Reservoir Extensions}{7}{subsection.2.1.2}%
+\contentsline {subsection}{\numberline {2.1.3}Gradient-Based Training of the Readout}{8}{subsection.2.1.3}%
+\contentsline {section}{\numberline {2.2}Intrinsic Plasticity}{8}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Attention-Enhanced RC}{10}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}Motivation: from Fixed to Dynamic Readout}{10}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3.2}Architecture}{11}{subsection.2.3.2}%
+\contentsline {paragraph}{Input Embedding.}{11}{section*.7}%
+\contentsline {paragraph}{Reservoir.}{11}{section*.8}%
+\contentsline {paragraph}{Normalization.}{11}{section*.9}%
+\contentsline {paragraph}{Attention Weight Generation.}{11}{section*.10}%
+\contentsline {paragraph}{Attention Projection and Readout.}{12}{section*.11}%
+\contentsline {paragraph}{Trainable Parameters.}{12}{section*.12}%
+\contentsline {subsection}{\numberline {2.3.3}Results from the original paper}{12}{subsection.2.3.3}%
+\contentsline {chapter}{\numberline {3}Methodology}{13}{chapter.3}%
+\contentsline {section}{\numberline {3.1}AERC architecture implementation}{13}{section.3.1}%
+\contentsline {subsection}{\numberline {3.1.1}Dataset and Preprocessing}{13}{subsection.3.1.1}%
+\contentsline {subsection}{\numberline {3.1.2}Reservoir Initialisation}{14}{subsection.3.1.2}%
+\contentsline {subsection}{\numberline {3.1.3}Attention Network and Readout}{14}{subsection.3.1.3}%
+\contentsline {subsection}{\numberline {3.1.4}Training Schedule}{14}{subsection.3.1.4}%
+\contentsline {section}{\numberline {3.2}IP implementation}{15}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}Unsupervised IP Pre-training}{15}{subsection.3.2.1}%
+\contentsline {subsection}{\numberline {3.2.2}Gradient-Based Fine-Tuning of IP Parameters}{16}{subsection.3.2.2}%
+\contentsline {subsection}{\numberline {3.2.3}Model Variants}{16}{subsection.3.2.3}%
+\contentsline {section}{\numberline {3.3}IP and RMSNormalization}{16}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Motivation}{17}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}Experimental Design}{17}{subsection.3.3.2}%
+\contentsline {section}{\numberline {3.4}Hyperparameter Grid Search}{17}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}Search Space}{18}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}Selection Criterion and Observations}{18}{subsection.3.4.2}%
+\contentsline {chapter}{\numberline {4}Results}{19}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Baseline Replication}{19}{section.4.1}%
+\contentsline {section}{\numberline {4.2}IP Pre-training: Unsupervised vs. Gradient}{20}{section.4.2}%
+\contentsline {chapter}{\numberline {5}Discussion}{23}{chapter.5}%
+\contentsline {chapter}{\numberline {6}Conclusion}{25}{chapter.6}%
+\contentsline {chapter}{Bibliography}{27}{section*.17}%
