@@ -509,8 +509,8 @@ At the end of $10,000$ steps, our replicated model achieved a final training los
 In this section, we analyze the performance impact of integrating Intrinsic Plasticity (IP) into the Attention-Enhanced Reservoir Computing (AERC) reservoir. We compare three distinct model configurations under identical hyperparameters ($N=160$, $H=30$, $d_e=16$, spectral radius $\rho=0.98$, trained for 2,000 steps with AdamW, learning rate warmup, and cosine schedule):
 \begin{enumerate}
   \item \textbf{Base AERC}: The baseline model without any Intrinsic Plasticity parameters.
-  \item \textbf{IP-frozen}: The model initialized with unsupervised IP pre-training (training the gain $a$ and bias $b$ parameters to shape the reservoir node outputs toward a target normal distribution $N(-0.1, 0.3^2)$). The IP parameters are subsequently frozen during downstream training.
-  \item \textbf{IP-gradient}: The model initialized with unsupervised IP pre-training, where $a$ and $b$ remain trainable parameters updated via backpropagation through time (BPTT) during downstream training.
+  \item \textbf{IP-frozen}: The model is initialized using unsupervised IP pre-training (training the gain $a$ and bias $b$ parameters to shape the reservoir node outputs toward a target normal distribution $N(-0.1, 0.3^2)$) and then trained normally with IP parameters frozen.
+  \item \textbf{IP-gradient}: The model is initialized with unsupervised IP pre-training, but during gradient training $a$ and $b$ remain trainable parameters updated via backpropagation through time (BPTT).
 \end{enumerate}
 
 The training and validation curves for these three configurations are shown in Figure~\ref{fig:three-way}.
