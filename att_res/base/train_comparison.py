@@ -29,7 +29,7 @@ if "ROCM_PATH" not in os.environ:
     os.environ["ROCM_PATH"] = "/opt/rocm"
 
 # Import AERC architectures
-from aerc_simplified import AERC as AERC_Simplified
+from aerc import AERC as AERC_Simplified
 from aerc_ip import AERC as AERC_IP, pretrain_reservoir_ip
 
 # Suppress PyTorch warnings
