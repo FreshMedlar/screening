@@ -40,13 +40,17 @@ def main():
 
     models_data = data["models"]
     
-    # Setup plotting grid (1 row, 3 columns if IP data exists, else 1 row, 2 columns)
+    # Setup plotting grid (2 rows: Row 1 has training/validation loss, Row 2 has IP parameters)
     has_ip_history = any("ip_a_history" in m for m in models_data.values())
-    num_cols = 3 if has_ip_history else 2
     
-    fig, axes = plt.subplots(1, num_cols, figsize=(6 * num_cols, 5.5), dpi=150)
-    if num_cols == 1:
-        axes = [axes]
+    if has_ip_history:
+        fig = plt.figure(figsize=(12, 10), dpi=150)
+        ax_train = fig.add_subplot(2, 2, 1)
+        ax_val = fig.add_subplot(2, 2, 2)
+        ax_ip = fig.add_subplot(2, 1, 2)
+    else:
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5.5), dpi=150)
+        ax_train, ax_val = axes[0], axes[1]
         
     color_map = {
         "aerc_base": "C0",
@@ -57,7 +61,6 @@ def main():
     }
 
     # 1. Plot Training Loss
-    ax_train = axes[0]
     for key, m_info in models_data.items():
         label = m_info.get("label", key)
         losses = m_info["train_losses"]
@@ -77,7 +80,6 @@ def main():
     ax_train.legend(fontsize=8, loc="upper right")
 
     # 2. Plot Validation Loss
-    ax_val = axes[1]
     for key, m_info in models_data.items():
         label = m_info.get("label", key)
         val_losses = m_info["val_losses"] # List of [step, loss]
@@ -93,7 +95,6 @@ def main():
 
     # 3. Plot IP Parameter Evolution (if available)
     if has_ip_history:
-        ax_ip = axes[2]
         for key, m_info in models_data.items():
             if "ip_a_history" in m_info and m_info["ip_a_history"]:
                 label = m_info.get("label", key)

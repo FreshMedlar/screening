@@ -6,6 +6,8 @@
 
 \usepackage{scrextend}  % override sapthesis's hardcoded 11pt
 \changefontsizes{12pt}
+\setlength{\headheight}{14pt}
+\addtolength{\topmargin}{-2pt}
 \usepackage{microtype} % Enhances spacing/alignment and reduces overfull/underfull boxes
 \usepackage[T1]{fontenc}
 \usepackage{hyperref}
@@ -60,14 +62,17 @@
 
 \begin{abstract}
   While the Transformer architecture has dominated the machine learning field
-  this decade, there is a growing search for more efficient architectures
+  over the past decade, there is a growing search for more efficient architectures
   during both training and inference. Reservoir computing, while remaining a
   strong class of models for time series prediction, struggles with discrete data
-  like text. Attention-enhanced reservoir computing (AERC) tries to overcome
-  this limitation using attention only on a fixed size reservoir, avoiding a
-  growing KV cache. In this paper, we integrate Intrinsic Plasticity to the
-  fixed reservoir to improve the AERC architecture and test it on a
-  wider set of tasks. We find that while purely unsupervised IP pre-training provides no significant performance gains on the character-level sequence modeling task, gradient-based fine-tuning of the IP parameters during supervised training yields a $+3\%$ validation loss improvement with a negligible trainable parameter overhead ($+0.3\%$).
+  like text. Attention-Enhanced Reservoir Computing (AERC) aims to overcome
+  this limitation using attention on a fixed-size reservoir, avoiding a
+  growing KV cache. In this thesis, we integrate Intrinsic Plasticity into the
+  AERC reservoir and evaluate its impact on character-level sequence modeling.
+  We find that while purely unsupervised IP pre-training provides no significant
+  performance gains, gradient-based fine-tuning of the IP parameters during
+  supervised training yields a $2.4\%$ validation loss improvement with a
+  negligible trainable parameter overhead ($0.2\%$).
 \end{abstract}
 
 \tableofcontents
@@ -92,27 +97,27 @@
 % CHAPTER 1 — INTRODUCTION  (~3 pages)
 % ============================================================
 \chapter{Introduction}
-In recent years there has been a growing search for efficient, subquadratic alternatives to Transformer, to make training and inference cheaper. The main approaches use a lighter variant of attention, such as Native Sparse Attention \cite{yuan-etal-2025-native}, or linear, recurrent architectures, such as Mamba\cite{gu2024mambalineartimesequencemodeling} or RWKV\cite{peng2023rwkvreinventingrnnstransformer}.
+In recent years, there has been a growing search for efficient, subquadratic alternatives to the Transformer, to make training and inference cheaper. The main approaches use a lighter variant of attention, such as Native Sparse Attention~\cite{yuan-etal-2025-native}, or linear, recurrent architectures, such as Mamba~\cite{gu2024mambalineartimesequencemodeling} or RWKV~\cite{peng2023rwkvreinventingrnnstransformer}.
 
-One architecture that has attracted interest for sequence modeling within the class of recurrent neural networks is the Reservoir Computing (RC) model as defined in \cite{10.1016/j.neucom.2007.12.020}, discovered independently by Jaeger\cite{jaeger2001echo} and Maass\cite{Maass}, which uses a fixed recurrent reservoir for non-linear temporal expansion of the inputs, and a linear layer to extract meaning for the high-dimensional data. The promising aspects of RC are in the fixed, recurrent, non-linear reservoir and the trainable linear output layer, which can be trained using Ridge Regression. In addition, the use of a physical reservoir makes this process even more efficient, while increasing the capabilities of the model\cite{Brunner2013ParallelPI}.
+One architecture that has attracted interest for sequence modeling within the class of recurrent neural networks is the Reservoir Computing (RC) model as defined in~\cite{10.1016/j.neucom.2007.12.020}, discovered independently by Jaeger~\cite{jaeger2001echo} and Maass~\cite{Maass}, which uses a fixed recurrent reservoir for non-linear temporal expansion of the inputs, and a linear layer to extract meaning from the high-dimensional data. The promising aspects of RC lie in the fixed, recurrent, non-linear reservoir and the trainable linear output layer, which can be trained using Ridge Regression. In addition, the use of a physical reservoir makes this process even more efficient, while increasing the capabilities of the model~\cite{Brunner2013ParallelPI}.
 
-Building upon the RC model there have been studies to expand its capabilities using multiple reservoirs \cite{Gallicchio2016DeepRC}, replacing the reservoir with a direct nonlinear feature-expansion model\cite{Gauthier_2021}, enforcing the Echo State Property for the reservoir connection matrix\cite{jaeger2001echo}, using leaky neurons\cite{JAEGER2007335}, feedback connections\cite{Lukosevicius2007} and Intrinsic Plasticity(IP)\cite{10.1007/11550822_11}\cite{10.1016/j.neucom.2007.12.020}.
-While these approaches have improved the base RC model, which shows state of the art results in time series applications\cite{ferte2024reservoir}, they still struggle with discrete, semantically rich data.
+Building upon the RC model, various studies have expanded its capabilities by using multiple reservoirs~\cite{Gallicchio2016DeepRC}, replacing the reservoir with a direct nonlinear feature-expansion model~\cite{Gauthier_2021}, enforcing the Echo State Property for the reservoir connection matrix~\cite{jaeger2001echo}, using leaky neurons~\cite{JAEGER2007335}, feedback connections~\cite{Lukosevicius2007}, and Intrinsic Plasticity (IP)~\cite{10.1007/11550822_11,10.1016/j.neucom.2007.12.020}.
+While these approaches have improved the base RC model, which shows state-of-the-art results in time-series applications~\cite{ferte2024reservoir}, they still struggle with discrete, semantically rich data.
 
-For this reason, an Attention-Enhanced Reservoir Computing (AERC) model has been proposed \cite{koster2024attentionenhancedreservoircomputing}, using dynamically generated attention weights, greatly improving the performance of the model with discrete data while still leveraging the cheap recurrence of the fixed reservoir.
+For this reason, an Attention-Enhanced Reservoir Computing (AERC) model has been proposed~\cite{koster2024attentionenhancedreservoircomputing}, which uses dynamically generated attention weights to greatly improve the performance of the model with discrete data while still leveraging the cheap recurrence of the fixed reservoir.
 
-In this thesis we integrate the IP mechanism in the AERC model reservoir, showing no meaningful performance improvements, and then implement gradient based finetuning for the IP bias and gain showing  downstream performance (+3\% validation loss) using a marginal number of trainable parameters (+0.3\%).
+In this thesis, we integrate the IP mechanism into the AERC model's reservoir. We show that while unsupervised pre-training yields no meaningful performance improvements, implementing gradient-based fine-tuning for the IP bias and gain parameters during supervised training improves downstream performance (a $2.4\%$ reduction in validation loss) with a negligible parameter overhead ($0.2\%$).
 
 \paragraph{Motivation}
-Transformers have become the de facto standard for large-scale sequence modeling, but their training and inference demand substantial compute, energy and memory resources, largely due to the quadratic cost of self-attention with sequence length. This makes deployment on resource-constrained or edge hardware challenging and contributes to a non-negligible environmental and economic cost. Reservoir computing offers a complementary paradigm in which a fixed recurrent ``reservoir'' performs the expensive nonlinear state evolution and only a lightweight readout is trained, drastically reducing the number of trainable parameters, memory accesses and optimization steps, and enabling efficient implementations on dedicated hardware such as FPGAs and photonic or analog substrates. Recent studies indicate that reservoir-based language models can approach transformer performance under comparable parameter budgets while exhibiting significantly lower training and inference times, highlighting their potential as fast and energy-efficient sequence models. For applications where energy, hardware cost or latency are primary constraints, a cheaper reservoir-computing-based architecture is therefore an attractive and practically motivated alternative to fully trainable transformer stacks.
+Transformers have become the de facto standard for large-scale sequence modeling, but their training and inference demand substantial compute, energy and memory resources, largely due to the quadratic cost of self-attention with sequence length. This makes deployment on resource-constrained or edge hardware challenging and contributes to a non-negligible environmental and economic cost. Reservoir computing offers a complementary paradigm in which a fixed recurrent ``reservoir'' performs the expensive nonlinear state evolution and only a lightweight readout is trained, drastically reducing the number of trainable parameters, memory accesses and optimization steps, and enabling efficient implementations on dedicated hardware such as FPGAs and photonic or analog substrates. Recent studies indicate that reservoir-based language models can approach transformer performance under comparable parameter budgets while exhibiting significantly lower training and inference times, highlighting their potential as fast and energy-efficient sequence models. For applications where energy, hardware cost or latency are primary constraints, a cheaper reservoir-computing-based architecture is therefore an attractive and practically motivated alternative to fully trainable transformer stacks. Indeed, the reservoir acts as a highly efficient, compressed replacement for the traditional KV-cache, integrating historical sequence context with simple, sub-quadratic recurrence mechanics.
 
 \paragraph{Contributions}
 In this thesis we make the following contributions:
 \begin{itemize}
   \item Replicate the AERC baseline from \cite{koster2024attentionenhancedreservoircomputing} on the Tiny Shakespeare dataset.
   \item Integrate unsupervised IP pre-training into the fixed AERC reservoir, with an ablation against the base model.
-  \item Develop gradient-based fine-tuning of the IP gain/bias parameters ($a$, $b$), showing a $+3\%$ validation loss improvement with only $+0.3\%$ additional parameters.
-  \item Conduct a four-way ablation study isolating the individual and combined effects of RMSNorm and IP.
+  \item Develop gradient-based fine-tuning of the IP gain/bias parameters ($a$, $b$), showing a $2.4\%$ validation loss improvement with only $0.2\%$ additional parameters.
+  \item Conduct a five-way ablation study isolating the individual and combined effects of RMSNorm and IP.
   \item Perform a hyperparameter grid search over the IP target distribution parameters ($\mu$, $\sigma$) to optimize downstream performance.
 \end{itemize}
 
@@ -120,7 +125,7 @@ In this thesis we make the following contributions:
 The remainder of this thesis is structured as follows.
 \textbf{Chapter~2} reviews the relevant background literature, covering the Reservoir Computing paradigm and the Echo State Network formulation, the Intrinsic Plasticity mechanism and its biological motivation, and the Attention-Enhanced Reservoir Computing architecture that this work builds upon.
 \textbf{Chapter~3} describes the methodology: the exact model configuration, dataset and preprocessing, the two IP integration strategies (unsupervised pre-training and gradient-based fine-tuning), the RMSNorm ablation design, and the hyperparameter grid search.
-\textbf{Chapter~4} presents the experimental results, including baseline replication, the three-way IP comparison, the four-way RMSNorm ablation, and the grid search outcomes.
+\textbf{Chapter~4} presents the experimental results, including baseline replication, the three-way IP comparison, and the five-way RMSNorm ablation.
 \textbf{Chapter~5} discusses the findings, offering interpretations for why unsupervised IP alone yields no gain while gradient IP does, the interaction between RMSNorm and IP, and the limitations of this study.
 \textbf{Chapter~6} concludes with a summary of contributions and directions for future work.
 
@@ -132,12 +137,12 @@ The remainder of this thesis is structured as follows.
 % ----------------------------------------------------------------
 %   Brief intro mentioning 3 areas (rc, aerc, ip)
 % ----------------------------------------------------------------
-In this chapter we discuss the three main areas of interest in this thesis, which are the Reservoir Computing paradigm first, the Intrinsic Plasticity mechanism and its applications second, and lastly the new Attention-Enhanced Reservoir Computing architecture.
-Models from the Reservoir Computing family are interesting for being easy and cheap to train, both in terms of data and compute, and for their natural fit for time-series problems. Intrinsic Plasticity, inspired by biological mechanisms, is a perfect addition to Reservoir Computing as it is both efficient and does not change the training dynamics while improving the reservoir stability and efficiency with negligible parameter increase. Lastly, the Attention-Enhanced Reservoir Computing architecture adds the attention mechanism to RC, sacrificing the analytical training but gaining greater performance and making it possible to use the reservoir for non-continuous values.
+In this chapter, we discuss the three main areas of interest in this thesis: the Reservoir Computing paradigm, the Intrinsic Plasticity mechanism and its applications, and the Attention-Enhanced Reservoir Computing architecture.
+Models from the Reservoir Computing family are appealing due to their ease and low cost of training in terms of both data and compute, as well as their natural fit for time-series problems. Intrinsic Plasticity, inspired by biological mechanisms, is a valuable addition to Reservoir Computing since it is computationally efficient and does not alter the training dynamics while improving reservoir stability and representation capacity. Finally, the Attention-Enhanced Reservoir Computing architecture integrates the attention mechanism with RC, sacrificing analytical readout training but gaining significantly higher performance and enabling the reservoir to be used for discrete sequence modeling.
 
 \section{Reservoir Computing}
 % TARGET: ~2.5 pages
-Models in the Reservoir Computing\cite{jaeger2001echo} family follow a simple structure, which is composed of:
+Models in the Reservoir Computing~\cite{jaeger2001echo} family follow a simple structure composed of:
 \begin{enumerate}
   \item an input layer $\mathbf{W}_{in}$ that randomly projects input $\mathbf{x}_t$ in the reservoir and is not trained
   \item a reservoir whose dynamics are described by the adjacency matrix $\mathbf{W}_r$, which is not trained
@@ -155,45 +160,45 @@ The vector $\mathbf{h}_t$ is then used to express the output $\mathbf{y}_{t+1}$ 
   \mathbf{y}_{t+1} = \mathbf{W}_{out} \mathbf{h}_t
 \]
 
-and $\mathbf{W}_{out}$ is trained in a supervised (or self-supervised) way using least-squares regression with Tikhonov regularization, commonly called ridge regression
+and $\mathbf{W}_{\text{out}}$ is trained in a supervised (or self-supervised) manner using least-squares regression with Tikhonov regularization, commonly referred to as ridge regression:
 
 \[
-  \min_{\mathbf{W}_{out}} \|\mathbf{Y} - \mathbf{X}\mathbf{W}_{out}\|^2 + \lambda \|\mathbf{W}_{out}\|^2
+  \min_{\mathbf{W}_{\text{out}}} \|\mathbf{Y} - \mathbf{X}\mathbf{W}_{\text{out}}\|^2 + \lambda \|\mathbf{W}_{\text{out}}\|^2
 \]
 
 Using an analytic solution is an extremely compelling part of RC, using computational resources and data more efficiently, and making the model more stable both during training and deployment, especially for long-term behaviors like modeling a chaotic time-series. It also guarantees good generalization and simpler, faster training iterations.
 
-\begin{figure}[htpb]
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\textwidth]{images/reservoir.pdf}
-  \caption{A schematic representations of the Reservoir Computing architecture.}
+  \caption{A schematic representation of the Reservoir Computing architecture.}
   \label{fig:rc-architecture}
 \end{figure}
 
 \subsection{Echo State Property}
 Fundamental for Echo State Networks (ESN) is the Echo State Property (ESP). The ESP dictates that the states of the reservoir must forget the initial conditions, meaning that, after a warmup period, the state of the reservoir must be determined only by the past inputs rather than the initial condition.
-Let $\mathbf{h}_t$ and $\mathbf{h}'_t$ be two trajectories obtained by the same input $\mathbf{x}_t$ but with different reservoir initialisation $\mathbf{h}_0$ and $\mathbf{h}'_0$; then the ESP is upheld if:
+Let $\mathbf{h}_t$ and $\mathbf{h}'_t$ be two trajectories obtained from the same input sequence $\mathbf{x}_t$ but with different reservoir initializations $\mathbf{h}_0$ and $\mathbf{h}'_0$; then the ESP is upheld if:
 \[
   \lim_{t \to \infty} \|\mathbf{h}_t - \mathbf{h}'_t\| = 0.
 \]
 
-From \cite{jaeger2001echo}, the standard practice to ensure the ESP is respected is to tune the reservoir spectral radius to be slightly under 1:
+From~\cite{jaeger2001echo}, the standard practice to ensure the ESP is respected is to tune the reservoir spectral radius to be slightly under 1:
 \[
   \rho(\mathbf{W}_r) < 1
 \]
-where $\rho(\mathbf{W}_r)$ represents the largest absolute eigenvalue of the reservoir matrix $\mathbf{W}_r$. For many ESN tasks performance is optimal near the edge of stability\cite{basterrech2017empiricalanalysisnecessarysufficient} (0.9--0.99) where memory is maximized without compromising order; however, this changes with the addition of different dynamics in the reservoir, such as leaky neurons, or for different tasks with alternative memory needs.
+where $\rho(\mathbf{W}_r)$ represents the spectral radius (the largest absolute eigenvalue) of the reservoir matrix $\mathbf{W}_r$. For many ESN tasks, performance is optimal near the edge of stability~\cite{basterrech2017empiricalanalysisnecessarysufficient} (typically $0.9$--$0.99$) where memory capacity is maximized without compromising stability; however, this behavior changes with alternative reservoir dynamics, such as leaky integrator neurons, or for different tasks with distinct memory requirements.
 \subsection{Reservoir Extensions}
 Building upon the performance shown by the base RC architectures, there have been various studies exploring modifications and additions in order to improve the architecture without compromising its attractive features.
 
-One prominent extension is Deep Reservoir Computing\cite{Gallicchio2016DeepRC}, which stacks multiple untrained reservoirs in a hierarchical structure. By feeding the state of one reservoir into the next, the model naturally extracts temporal features at multiple timescales. This deep architecture allows the network to handle complex multi-scale dynamics and richer representations without the computational burden of training deep recurrent layers via backpropagation.
+One prominent extension is Deep Reservoir Computing~\cite{Gallicchio2016DeepRC}, which stacks multiple untrained reservoirs in a hierarchical structure. By feeding the state of one reservoir into the next, the model naturally extracts temporal features at multiple timescales. This deep architecture allows the network to handle complex multi-scale dynamics and richer representations without the computational burden of training deep recurrent layers via backpropagation.
 
-To better handle slow-moving or continuous data, \cite{JAEGER2007335} introduced Leaky Integrator Echo State Networks (LI-ESNs). In this variant, each neuron retains a fraction of its previous activation, acting as an implicit low-pass filter. This leak rate hyperparameter enables the reservoir to integrate information over much longer time spans, making it highly effective for modeling slowly changing time-series.
+To better handle slow-moving or continuous data, Jaeger~\cite{JAEGER2007335} introduced Leaky Integrator Echo State Networks (LI-ESNs). In this variant, each neuron retains a fraction of its previous activation, acting as an implicit low-pass filter. This leak rate hyperparameter enables the reservoir to integrate information over much longer time spans, making it highly effective for modeling slowly changing time-series.
 
 Another significant modification involves output feedback connections~\cite{Lukosevicius2007}. While standard RC only reads from the reservoir, adding feedback from the trained readout back into the reservoir state allows the network to be driven by its own previous predictions. This closed-loop setup is crucial for autonomous sequence generation and stabilizing the emulation of chaotic systems.
 
 In recent years, the paradigm has even shifted beyond neural networks with Next-Generation Reservoir Computing (NGRC)~\cite{Gauthier_2021}. NGRC replaces the recurrent neural nodes entirely with a mathematically equivalent nonlinear vector autoregression, using polynomial feature expansions of past inputs. This approach requires a fraction of the data and computational power, possesses far fewer hyperparameters, yet achieves equivalent or superior performance on complex forecasting tasks.
 
-The mathematical simplicity of maintaining a fixed, random dynamical system has also spurred the field of Physical Reservoir Computing. Instead of simulating a network in software, physical systems with complex dynamics can be used to project inputs into a high-dimensional space. A landmark example by \cite{Brunner2013ParallelPI} demonstrated that photonic systems, such as delay-coupled lasers, can act as ultra-fast, energy-efficient reservoirs, processing information at gigahertz speeds directly in hardware.
+The mathematical simplicity of maintaining a fixed, random dynamical system has also spurred the field of Physical Reservoir Computing. Instead of simulating a network in software, physical systems with complex dynamics can be used to project inputs into a high-dimensional space. A landmark example by~\cite{Brunner2013ParallelPI} demonstrated that photonic systems, such as delay-coupled lasers, can act as ultra-fast, energy-efficient reservoirs, processing information at gigahertz speeds directly in hardware.
 
 \subsection{Gradient-Based Training of the Readout}
 As mentioned earlier, one of the most attractive aspects of standard RC is the use of ridge regression to fit the readout, which improves accuracy while significantly reducing computational requirements and training time.
@@ -214,10 +219,10 @@ which prevents the isolation of $\mathbf{W}_{out}$ because the predicted probabi
 \section{Intrinsic Plasticity}
 \label{sec:ip}
 % TARGET: ~2.5 pages
-The Intrinsic Plasticity (IP) mechanism, first introduced in \cite{10.1007/11550822_11}, takes inspiration from a biological phenomenon called {\it homeostatic plasticity}, through which neurons autonomously adapt to stimuli. It is shown that neurons with an exponential firing rate distribution maximize information flow, and therefore neurons try to match such a distribution in-between their biological constraints.
-As a biological learning rule, it differs from other commonly known phenomena such as Hebbian learning and synaptic plasticity because it modifies the neuron's properties rather than its connections (synapses), as shown in \cite{destexhe2004plasticity}.
+The Intrinsic Plasticity (IP) mechanism, first introduced in~\cite{10.1007/11550822_11}, takes inspiration from a biological phenomenon called \textit{homeostatic plasticity}, through which neurons autonomously adapt to external stimuli. It has been shown that neurons with an exponential firing rate distribution maximize information flow, and thus biological neurons adapt to approximate such a distribution within their physical constraints.
+As a biological learning rule, it differs from other commonly known phenomena such as Hebbian learning and synaptic plasticity because it modifies the intrinsic properties of the neuron rather than its synaptic connections, as shown in~\cite{destexhe2004plasticity}.
 
-The objective of the IP learning rule is the maximization of entropy in the neuron output distribution, which is equivalent to the maximization of information flowing through it. Because we use the hyperbolic tangent nonlinearity, this means pushing neurons output towards a gaussian distribution
+The objective of the IP learning rule is the maximization of entropy in the neuron output distribution, which is equivalent to the maximization of information flowing through it. Because we use the hyperbolic tangent nonlinearity, this entails pushing the neuron outputs toward a Gaussian distribution
 \[
   p_{\text{norm}}(y) = \frac{1}{\sqrt{2\pi}\sigma} \exp\left(-\frac{(y-\mu)^2}{2\sigma^2}\right)
 \]
@@ -227,7 +232,7 @@ The Gaussian is the maximum-entropy distribution under a fixed mean and variance
 
 The derived learning rules from~\cite{10.1016/j.neucom.2007.12.020} to obtain this objective are
 \[
-  \Delta b = \eta \left(1 - \left(2 + \frac{1}{\mu}\right)y + \frac{y^2}{\mu}\right)
+  \Delta b = -\eta \left(-\frac{\mu}{\sigma^2} + \frac{y}{\sigma^2}\left(2\sigma^2 + 1 - y^2 + \mu y\right)\right)
 \]
 
 \[
@@ -246,9 +251,9 @@ This means that our RC dynamics become
   \mathbf{h}_t = \tanh(a \cdot \text{pre\_act} + b)
 \]
 
-where $a$ and $b$ are the bias and gain added by the IP mechanism.
+where $a$ and $b$ are the gain and bias added by the IP mechanism.
 
-This mechanism is especially useful in reservoir computing, as the reservoir is usually fixed and only governed by few hyperparameters, mostly the spectral radius. Using IP provides a principled method of improving the reservoir output without compromising the analytical training. \cite{10.1016/j.neucom.2007.12.020} demonstrated that applying IP pre-training to the reservoir consistently improved downstream performance, modfying the internal dynamics towards a more informative regime.
+This mechanism is especially useful in reservoir computing, as the reservoir is usually fixed and only governed by few hyperparameters, mostly the spectral radius. Using IP provides a principled method for improving the reservoir representations without compromising analytical training. Schrauwen et al.~\cite{10.1016/j.neucom.2007.12.020} demonstrated that applying IP pre-training to the reservoir consistently improved downstream performance, modifying the internal dynamics toward a more informative regime.
 
 \section{Attention-Enhanced RC}
 % TARGET: ~2.5 pages
@@ -256,7 +261,7 @@ In this section we describe the Attention-Enhanced RC architecture, the motivati
 
 \subsection{Motivation: from Fixed to Dynamic Readout}
 As already mentioned, one attractive feature of RC is the fixed, linear readout that can be learned analytically offline. While this has many benefits, it also comes with drawbacks. Firstly, it greatly limits the flexibility of the model, which is not able to adapt its weights and therefore does not exhibit in-context learning capabilities. Secondly, ridge regression needs to compute the inverse of $(\mathbf{X}\mathbf{X}^T + \lambda\mathbf{I})$, where $\mathbf{X}$ is the matrix of collected reservoir states of size $N\times T$, with $N$ the reservoir size and $T$ the number of training samples. Memory for this computation scales quadratically ($\mathcal{O}(N^2)$), which is not a problem for small time-series tasks, but quickly becomes unfeasible for models with billions of parameters that are increasingly common in language modeling.
-Gradient methods obviously do not encounter this problem as they are inherently iterative and use batching.
+Gradient methods do not encounter this problem as they are inherently iterative and use batching.
 Following this reasoning, it was only natural to use a different approach for the readout. AERC solves both problems while remaining memory-efficient and scalable. The network feeds the RC states to a small feedforward neural network to generate dynamic attention weights that attend to different reservoir states based on context. This approach utilizes the reservoir to avoid the growing KV-cache, giving the model a limited but vastly cheaper memory.
 
 \begin{figure}[htbp]
@@ -294,7 +299,7 @@ where $\boldsymbol{\gamma} \in \mathbb{R}^N$ is a learned scale vector. The role
 The normalized state $\tilde{\mathbf{h}}_t$ is passed through a small two-layer feedforward network, the \textit{gate network}, which generates a context-dependent attention weight matrix:
 \begin{align}
   \mathbf{g}_t       & = \text{ReLU}\!\left(\mathbf{W}_{gate}\,\tilde{\mathbf{h}}_t + \mathbf{b}_{gate}\right) \in \mathbb{R}^H \\
-  \mathbf{W}_{att,t} & = \left(\mathbf{W}_{out}\,\mathbf{g}_t + \mathbf{b}_{out}\right)\in \mathbb{R}^{H \times N}
+  \mathbf{W}_{att,t} & = \text{reshape}\!\left(\mathbf{W}_{out}\,\mathbf{g}_t + \mathbf{b}_{out},\; H,\, N\right)\in \mathbb{R}^{H \times N}
 \end{align}
 where $\mathbf{W}_{gate} \in \mathbb{R}^{H \times N}$ and $\mathbf{W}_{out} \in \mathbb{R}^{HN \times H}$ are trainable weight matrices and $H \ll N$ is the attention subspace dimension. Unlike standard self-attention, this mechanism does not compute any key-query dot products; instead it generates a full attention weight matrix conditioned only on the current reservoir state.
 
@@ -317,13 +322,14 @@ Only the gate network and readout are trainable; the embedding and reservoir are
 With the reference hyperparameters $V=65$, $d_e=16$, $N=160$ and $H=30$, this yields approximately 155{,}000 trainable parameters, comparable to the architecture reported in~\cite{koster2024attentionenhancedreservoircomputing}.
 
 \subsection{Results from the original paper}
-TODO make the image or the base aerc architecture.
-We need to:
-\begin{itemize}
-  \item Summarize the key results of \cite{koster2024attentionenhancedreservoircomputing} that this thesis builds upon.
-  \item Report the cross-entropy loss figures for the 155k parameter model.
-  \item Describe qualitative text generation samples and the training/inference time advantage over transformers.
-\end{itemize}
+In the paper introducing AERC~\cite{koster2024attentionenhancedreservoircomputing}, the authors compared the model against a traditional reservoir (RC) and a standard Transformer on character-level language modeling. 
+
+For a model size of around 155,000 parameters, the Transformer performed the best with a test loss of 1.67, while the standard reservoir reached only 2.01. The AERC model achieved a test loss of 1.73, showing it can close most of the performance gap with Transformers while keeping the reservoir fixed.
+
+When generating text starting from the seed \textit{``to be, or not''}, both the Transformer and AERC could generate readable Shakespearean-style text, while the base reservoir struggled with repetition and grammar. The authors also measured N-gram overlap and found that AERC matches the text diversity of the Transformer.
+
+Finally, the authors highlighted that training and inference are much faster with AERC. If the reservoir computation is done on physical hardware like photonic chips, training and inference times are orders of magnitude faster because the model does not need to compute standard quadratic attention over the sequence.
+
 
 % ============================================================
 % CHAPTER 3 — METHODOLOGY  (~9 pages)
@@ -331,7 +337,7 @@ We need to:
 
 \chapter{Methodology}
 
-In this chapter we discuss the implementation of the AERC architecture, the data preprocessing and the structural choices for the reservoir and attention parts of the network. Then the specifics of the IP implementation, especially the supervised and unsupervised difference. After the IP specifics we also compare it to RMSNormalization\cite{zhang2019root}, to better understand its role. Lastly we briefly describe the hyperparameter search used for these models.
+In this chapter, we discuss the implementation details of the AERC architecture, the data preprocessing, and the structural choices for the reservoir and attention components of the network. We then detail the implementation of the IP mechanism, contrasting the unsupervised and supervised training strategies. Following this, we introduce the comparison between IP and RMSNorm~\cite{zhang2019root} to clarify their respective roles. Finally, we describe the hyperparameter grid search used to optimize these models.
 
 \section{AERC architecture implementation}
 \label{sec:aerc-impl}
@@ -348,17 +354,17 @@ where $\hat{y}$ are the output logits and $y$ the true one-hot label. PyTorch~\c
 \subsection{Dataset and Preprocessing}
 All experiments use the Tiny Shakespeare corpus~\cite{karpathy2015charRnn}, a concatenation of Shakespeare plays totalling approximately 1.1 million characters. The vocabulary consists of $V = 65$ unique characters. The dataset follows a 90/10 train/test split.
 
-For each training sample, a sliding window of length $T = 128$ characters is extracted from the corpus. The input sequence is $\mathbf{x} = (x_1, \ldots, x_T)$ and the target is the sequence shifted by one position, $\mathbf{y} = (x_2, \ldots, x_{T+1})$, so the model learns to predict each next character given all preceding characters in the window. Mini-batches of size 32 are drawn with random shuffling at each epoch.
+For each training sample, a sliding window of length $T = 64$ characters is extracted from the corpus. The input sequence is $\mathbf{x} = (x_1, \ldots, x_T)$ and the target is the sequence shifted by one position, $\mathbf{y} = (x_2, \ldots, x_{T+1})$, so the model learns to predict each next character given all preceding characters in the window. Mini-batches of size 64 are drawn with random shuffling at each epoch.
 
-\subsection{Reservoir Initialisation}
+\subsection{Reservoir Initialization}
 The input embedding matrix $\mathbf{E} \in \mathbb{R}^{V \times d_e}$ is initialized with PyTorch's default uniform initialization and immediately frozen; its weights receive no gradient updates throughout training.
 
-The recurrent reservoir $\mathbf{W}_r \in \mathbb{R}^{N \times N}$ is initialized as a random matrix and then rescaled so that its spectral radius equals the target value $\rho(\mathbf{W}_r) = 0.95$. This rescaling is performed once before training by computing the dominant eigenvalue via \texttt{torch.linalg.eigvals} and multiplying all entries by the ratio $\rho_{\text{target}} / \rho_{\text{current}}$. As discussed in Section~\ref{sec:aerc-impl}, keeping the spectral radius strictly below 1 is the standard sufficient condition for the Echo State Property. The reservoir weights are also frozen after this initialization step.
+The recurrent reservoir $\mathbf{W}_r \in \mathbb{R}^{N \times N}$ is initialized as a random matrix and then rescaled so that its spectral radius equals the target value $\rho(\mathbf{W}_r) = 0.98$. This rescaling is performed once before training by computing the dominant eigenvalue via \texttt{torch.linalg.eigvals} and multiplying all entries by the ratio $\rho_{\text{target}} / \rho_{\text{current}}$. As discussed in Section~\ref{sec:aerc-impl}, keeping the spectral radius strictly below 1 is the standard sufficient condition for the Echo State Property. The reservoir weights are also frozen after this initialization step.
 
 \subsection{Attention Network and Readout}
 The three trainable components of the model are the gate network, the output mapping, and the final readout layer. Their shapes and parameter counts are summarized in Table~\ref{tab:param-count}.
 
-\begin{table}[h]
+\begin{table}[htbp]
   \centering
   \caption{Trainable parameter breakdown for the AERC model ($N=160$, $H=30$, $V=65$).}
   \label{tab:param-count}
@@ -379,7 +385,7 @@ The three trainable components of the model are the gate network, the output map
 \end{table}
 
 \subsection{Training Schedule}
-All models are optimized using AdamW~\cite{loshchilov2019decoupledweightdecayregularization} with $\beta_1 = 0.9$, $\beta_2 = 0.95$, and weight decay $\lambda = 10^{-3}$. The base learning rate is set to $5 \times 10^{-3}$ and is modulated by a three-phase schedule: a linear warmup over the first 150 steps, followed by a cosine decay over the middle phase, and a linear cooldown over the final 300 steps down to a minimum of $10\%$ of the peak learning rate. Gradient norms are clipped to a maximum of 1.0 to prevent training instabilities. All models are trained for 2{,}000 gradient steps. Training is performed on a GPU using the ROCm software stack, with bfloat16 mixed precision to reduce memory usage. A fixed random seed of 42 is used for all experiments to ensure reproducibility.
+All models are optimized using AdamW~\cite{loshchilov2019decoupledweightdecayregularization} with $\beta_1 = 0.9$, $\beta_2 = 0.95$, and weight decay $\lambda = 10^{-3}$. The base learning rate is set to $5 \times 10^{-3}$ and is modulated by a three-phase schedule: a linear warmup over the first 150 steps, followed by a cosine decay over the middle phase, and a linear cooldown over the final 300 steps down to a minimum of $10\%$ of the peak learning rate. Gradient norms are clipped to a maximum of 1.0 to prevent training instabilities. All models are trained for 10{,}000 gradient steps. Training is performed on a GPU using the ROCm software stack, with bfloat16 mixed precision to reduce memory usage. A fixed random seed of 42 is used for all experiments to ensure reproducibility.
 
 \section{IP implementation}
 \label{sec:ip-impl}
@@ -401,7 +407,7 @@ and then applies the current gain and bias to obtain the neuron output $\mathbf{
 \]
 where $\eta$ is the IP learning rate, $\mu$ is the target mean, and $\sigma$ is the target standard deviation of the neuron output distribution. The updates are averaged over the batch dimension and applied in place. The gain is clamped to $a \geq 10^{-4}$ after each update to prevent numerical collapse. Critically, no backpropagation through the attention network occurs during this phase: all reservoir weights $\mathbf{W}_{in}$ and $\mathbf{W}_r$ remain frozen.
 
-The best IP hyperparameters found by the grid search (Section~\ref{sec:grid-search}) are $\eta = 10^{-5}$, $\mu = -0.1$, and $\sigma = 0.3$, with an IP learning rate of $10^{-5}$.
+The best IP hyperparameters found by the grid search (Section~\ref{sec:grid-search}) are an IP learning rate of $\eta = 10^{-5}$, target mean $\mu = -0.1$, and target standard deviation $\sigma = 0.3$.
 
 \subsection{Gradient-Based Fine-Tuning of IP Parameters}
 In addition to the purely unsupervised pre-training described above, we evaluate a second variant in which the gain $a$ and bias $b$ are not frozen after pre-training but instead remain as trainable parameters throughout the main gradient descent phase. In this \textit{IP-gradient} variant, the gradient signal flows through a compiled reservoir scan kernel,
@@ -438,7 +444,7 @@ IP, on the other hand, adjusts each neuron's gain and bias based on an informati
 The hypothesis motivating this ablation is that if RMSNorm already corrects the output scale of reservoir neurons, the additional benefit of IP pre-training may be reduced or eliminated. Conversely, if IP shapes the distribution in a way that is not captured by second-moment normalization alone (for example, by shifting the mean or improving the utilization of the tanh's linear region), then the two mechanisms should be complementary.
 
 \subsection{Experimental Design}
-To test this hypothesis, we run the four model variants defined in Section~\ref{sec:ip-impl}---Base, Base+Norm, IP-frozen, and IP-gradient---under identical hyperparameters, varying only the normalization and IP flags. All models are trained for 2{,}000 steps with the same optimizer, learning rate schedule, and random seed. Validation cross-entropy loss is reported at each evaluation interval and compared across conditions. The quantitative results and discussion are presented in Section~\ref{ch:results}.
+To test this hypothesis, we run the four model variants defined in Section~\ref{sec:ip-impl}---Base, Base+Norm, IP-frozen, and IP-gradient---under identical hyperparameters, varying only the normalization and IP flags. All models are trained for 10{,}000 steps with the same optimizer, learning rate schedule, and random seed. Validation cross-entropy loss is reported at each evaluation interval and compared across conditions. The quantitative results and discussion are presented in Section~\ref{ch:results}.
 
 \section{Hyperparameter Grid Search}
 \label{sec:grid-search}
@@ -447,7 +453,7 @@ To select the best IP target distribution parameters, we perform a grid search o
 \subsection{Search Space}
 The grid sweeps over $\sigma \in \{0.2, 0.3, 0.4\}$ and $\mu \in \{-0.1, 0.0, 0.1\}$, for a total of 9 configurations. The spectral radius is fixed at $\rho = 0.98$ and the learning rate at $5 \times 10^{-3}$ for all runs. The results are summarized in Table~\ref{tab:grid-results}.
 
-\begin{table}[h]
+\begin{table}[htbp]
   \centering
   \caption{Hyperparameter grid search results for the IP-gradient model ($N=160$, $H=30$, spectral radius 0.98, $\eta=5\times10^{-3}$). Validation loss is reported after 2{,}000 training steps.}
   \label{tab:grid-results}
@@ -483,16 +489,16 @@ Finally, the total variation across the grid is modest, approximately 0.02 nats,
 
 \chapter{Results}
 \label{ch:results}
-In this chapter, we present the quantitative and qualitative results of our AERC experiments. We begin by detailing our baseline replication, evaluating the convergence behavior of the 155,000 parameter model. We then investigate the performance effects of Intrinsic Plasticity pre-training and gradient-based fine-tuning. Following this, we report the results of the normalization ablation study, exploring the interaction between RMSNorm and Intrinsic Plasticity. Finally, we analyze the hyperparameter grid search results, mapping the sensitivity of the model to the target distribution parameters.
+In this chapter, we present the quantitative and qualitative results of our AERC experiments. We begin by detailing our baseline replication, evaluating the convergence behavior of the 155,000 parameter model. We then investigate the performance effects of Intrinsic Plasticity pre-training and gradient-based fine-tuning. Finally, we report the results of the normalization ablation study, exploring the interaction between RMSNorm and Intrinsic Plasticity.
 
 \section{Baseline Replication}
 \label{sec:results-baseline}
 
-To establish a solid foundation for our investigations, we replicated the training of the baseline 155,000 parameter Attention-Enhanced Reservoir Computing (AERC) model as configured in the original paper by Köster et al. \cite{koster2024attentionenhancedreservoircomputing}. This configuration employs a vocabulary size of $V=59$ from the lowercased Tiny Shakespeare dataset, sequence lengths of $T=32$, embedding dimensions of $d_e=16$, reservoir size of $N=160$, and an attention hidden dimension of $H=30$.
+To establish a solid foundation for our investigations, we replicated the training of the baseline 155,000 parameter Attention-Enhanced Reservoir Computing (AERC) model as configured in the original paper by Köster et al. \cite{koster2024attentionenhancedreservoircomputing}. This configuration employs a vocabulary size of $V=59$ from the lowercased Tiny Shakespeare dataset, sequence lengths of $T=32$, embedding dimensions of $d_e=16$, reservoir size of $N=160$, and an attention hidden dimension of $H=30$. Note that these hyperparameters differ from those used in our subsequent experiments (Section~\ref{sec:aerc-impl}), as this replication faithfully follows the original paper's configuration to enable a direct comparison with the reported results.
 
 The model was optimized using the standard Adam optimizer with a learning rate of $1 \times 10^{-4}$ and batch size of $1024$. In contrast to the sharded training scheme utilized by the authors to circumvent memory caching limitations, our replication was trained normally on-the-fly, drawing batches uniformly across the entire training partition. The model was trained for $10,000$ steps (corresponding to approximately $1.25$ passes over the full training corpus).
 
-\begin{figure}[htpb]
+\begin{figure}[htbp]
   \centering
   \includegraphics[width=0.8\textwidth]{images/baseline_aerc_rep.png}
   \caption{Training and validation cross-entropy loss over steps for the replicated base AERC model (155k parameters) trained normally on-the-fly.}
@@ -506,7 +512,7 @@ At the end of $10,000$ steps, our replicated model achieved a final training los
 \section{IP Pre-training: Unsupervised vs. Gradient}
 \label{sec:results-ip}
 
-In this section, we analyze the performance impact of integrating Intrinsic Plasticity (IP) into the Attention-Enhanced Reservoir Computing (AERC) reservoir. We compare three distinct model configurations under identical hyperparameters ($N=160$, $H=30$, $d_e=16$, spectral radius $\rho=0.98$, trained for 2,000 steps with AdamW, learning rate warmup, and cosine schedule):
+In this section, we analyze the performance impact of integrating Intrinsic Plasticity (IP) into the Attention-Enhanced Reservoir Computing (AERC) reservoir. We compare three distinct model configurations under identical hyperparameters ($N=160$, $H=30$, $d_e=16$, spectral radius $\rho=0.98$, trained for 10{,}000 steps with AdamW, learning rate warmup, and cosine schedule):
 \begin{enumerate}
   \item \textbf{Base AERC}: The baseline model without any Intrinsic Plasticity parameters.
   \item \textbf{IP-frozen}: The model is initialized using unsupervised IP pre-training (training the gain $a$ and bias $b$ parameters to shape the reservoir node outputs toward a target normal distribution $N(-0.1, 0.3^2)$) and then trained normally with IP parameters frozen.
@@ -515,49 +521,81 @@ In this section, we analyze the performance impact of integrating Intrinsic Plas
 
 The training and validation curves for these three configurations are shown in Figure~\ref{fig:three-way}.
 
-\begin{figure}[htpb]
+\begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.8\textwidth]{images/aerc_three_way_comparison.png}
+  \includegraphics[width=1\textwidth]{images/aerc_three_way_comparison.pdf}
   \caption{Three-way validation loss comparison: Base AERC, IP-frozen AERC, and IP-gradient AERC models.}
   \label{fig:three-way}
 \end{figure}
 
 The experimental results reveal two major findings:
 \begin{itemize}
-  \item \textbf{Unsupervised IP alone (IP-frozen) provides no significant benefit.} The final validation loss for the IP-frozen model is $1.7618$, which is statistically equivalent to the $1.7621$ achieved by the Base AERC model. This suggests that simply pre-shaping the reservoir's activations to maximize information entropy does not directly translate to better character prediction quality. The attention gate network is likely expressive enough to compensate for unoptimized state distributions, neutralizing the benefit of a purely unsupervised pre-trained reservoir.
-  \item \textbf{Supervised fine-tuning via BPTT (IP-gradient) yields a significant performance improvement.} The IP-gradient model achieves a final validation loss of $1.7113$, representing a $2.9\%$ relative reduction in loss (corresponding to a perplexity reduction from $5.82$ to $5.54$). This performance boost is achieved with an extremely marginal parameter overhead: adding only $2N$ trainable scalars ($2 \times 160 = 320$ parameters), representing a $+0.3\%$ parameter overhead.
+  \item \textbf{Unsupervised IP alone (IP-frozen) provides no significant benefit.} The final validation loss for the IP-frozen model is $1.6403$, which is statistically equivalent to (and even slightly higher than) the $1.6372$ achieved by the Base AERC model. This suggests that simply pre-shaping the reservoir's activations to maximize information entropy does not directly translate to better character prediction quality. The attention gate network is likely expressive enough to compensate for unoptimized state distributions, neutralizing the benefit of a purely unsupervised pre-trained reservoir.
+  \item \textbf{Supervised fine-tuning via BPTT (IP-gradient) yields a significant performance improvement.} The IP-gradient model achieves a final validation loss of $1.5981$, representing a $2.4\%$ relative reduction in loss (corresponding to a perplexity reduction from $5.14$ to $4.94$). This performance boost is achieved with an extremely marginal parameter overhead: adding only $2N$ trainable scalars ($2 \times 160 = 320$ parameters), representing a $+0.2\%$ parameter overhead.
 \end{itemize}
 
 This comparison highlights that while unsupervised IP establishes a well-distributed activation baseline, downstream task adaptation of the gain and bias parameters via backpropagation is essential to unlock performance gains in discrete sequence modeling tasks.
 
-% \section{RMSNorm Ablation}
-% \label{sec:results-normablation}
-% TARGET: ~2 pages
-%   - Report the four-way ablation results.
-%   - Include the four-way comparison figure:
-%     \begin{figure}[h]
-%       \centering
-%       \includegraphics[width=0.8\textwidth]{../base/aerc_four_way_comparison.png}
-%       \caption{Four-way ablation: Base, Base+Norm, IP-frozen, and
-%                IP-gradient AERC models.}
-%       \label{fig:four-way}
-%     \end{figure}
-%   - Discuss whether RMSNorm and IP interact (additive, synergistic,
-%     or redundant benefits).
-%
-% \section{Hyperparameter Grid Search Results}
-% \label{sec:results-grid}
-% TARGET: ~1.5 pages
-%   - Present Table~\ref{tab:grid-results} (defined in Section 3.4)
-%     and discuss the trends.
-%   - Include the bar-chart or heatmap figure if available:
-%     \begin{figure}[h]
-%       \centering
-%       \includegraphics[width=0.7\textwidth]{../base/aerc_comparison_table.png}
-%       \caption{Summary comparison table of all model variants.}
-%       \label{fig:comp-table}
-%     \end{figure}
-%   - State which configuration is selected as the best and why.
+\section{RMSNorm Ablation}
+\label{sec:results-normablation}
+
+To isolate the contribution of RMSNorm~\cite{zhang2019root} from that of Intrinsic Plasticity, a five-way comparison was conducted.
+The five model variants are:
+
+\begin{enumerate}
+  \item \textbf{AERC base} — no RMSNorm, no IP (155,645 parameters).
+  \item \textbf{AERC + RMSNorm} — RMSNorm applied to the reservoir states, no IP (155,805 parameters; $+$160 scale parameters).
+  \item \textbf{AERC + IP frozen} — IP pre-trained, gain/bias frozen during BPTT, no RMSNorm (155,645 parameters).
+  \item \textbf{AERC + IP gradient} — IP pre-trained, gain/bias fine-tuned via BPTT, no RMSNorm (155,965 parameters; $+$320 IP parameters).
+  \item \textbf{AERC + IP gradient + RMSNorm} — both IP (BPTT-trained) and RMSNorm (156,125 parameters).
+\end{enumerate}
+
+All five models share identical reservoir, attention, and readout initialization.
+Figure~\ref{fig:five-way} shows the training and validation loss curves over 10,000 steps, together with the evolution of the IP gain $a$ and bias $b$ parameters for the three IP-equipped variants.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=1\textwidth]{images/aerc_5way_comparison_10k.png}
+  \caption{Five-way validation loss comparison: AERC base, AERC + RMSNorm, IP-frozen, IP-gradient (no RMSNorm), and IP-gradient + RMSNorm models trained for 10,000 steps on Tiny Shakespeare.}
+  \label{fig:five-way}
+\end{figure}
+
+The final validation losses are summarized in Table~\ref{tab:five-way}.
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{lrrr}
+    \toprule
+    \textbf{Model}                  & \textbf{Params} & \textbf{Val.\ loss} & \textbf{PPL} \\
+    \midrule
+    AERC base (no RMSNorm)          & 155,645         & 1.6372              & 5.14         \\
+    AERC + RMSNorm                  & 155,805         & 1.6410              & 5.16         \\
+    AERC + IP frozen (no RMSNorm)   & 155,645         & 1.6403              & 5.16         \\
+    AERC + IP gradient (no RMSNorm) & 155,965         & 1.5981              & 4.94         \\
+    AERC + IP gradient + RMSNorm    & 156,125         & 1.6039              & 4.97         \\
+    \bottomrule
+  \end{tabular}
+  \caption{Final validation loss and perplexity (PPL) for the five model variants at step 10,000.}
+  \label{tab:five-way}
+\end{table}
+
+Two observations emerge from this ablation.
+
+\textbf{RMSNorm provides no measurable benefit.}
+Adding RMSNorm to the base model yields a final validation loss of $1.6410$, which is marginally worse than the base model's $1.6372$ — a difference within the noise of stochastic training.
+The same pattern holds in combination with IP: the IP-gradient + RMSNorm model achieves $1.6039$, compared to $1.5981$ for IP-gradient alone.
+Across both conditions the gap is negligible, confirming that RMSNorm is effectively neutral in this setting.
+
+\textbf{On why RMSNorm does not help in this context.}
+RMSNorm should be beneficial when activations accumulate large variance across layers, which can destabilize training.
+Because in the AERC architecture the reservoir is governed by a fixed echo-state network with spectral radius $\rho = 0.98$, the state norm is already constrained and cannot grow freely.
+While the attention gate $\mathbf{W}_{\mathrm{net}}$ is a trained, expressive network that can implicitly re-scale reservoir contributions before the readout, offloading normalization to RMSNorm does not help. This is likely because the bounded spectral radius and the flexibility of both the feedforward neural network and the attention operation already provide sufficient regularization. Notably, readouts trained using ridge regression benefit significantly from normalization, possibly because the analytic solution must also account for the non-normalized states.
+Thus, the ESP and the attention layer replace the role that RMSNorm would otherwise play: the reservoir dynamics are inherently bounded, and any residual scale imbalance is absorbed by the attention mechanism's learned weights.
+In contrast, IP gradient training --- which adjusts per-neuron gain $a$ and bias $b$ via backpropagation --- achieves a more targeted adaptation. The crucial advantage of gradient-based IP tuning is that the parameters are optimized via BPTT over long input sequences, allowing the scale and bias adjustments to reflect the temporal dependencies and historical dynamics of the reservoir. Conversely, RMSNorm operates instantaneously and state-wise at each individual step, completely blind to the sequence's history. Similarly, standard unsupervised IP adapts parameters based purely on local, instantaneous pre-activations to match a static target distribution. By training the gain and bias through the supervised sequence-level loss, the reservoir dynamics are shaped with the global context of the sequence, explaining why gradient-based IP training successfully improves predictive performance while state-wise, history-agnostic normalizations do not.
+
+\textbf{Early adaptation and stabilization of IP parameters.}
+The bottom plot of Figure~\ref{fig:five-way} highlights the evolution of the IP parameters during supervised training. For both gradient-adapted configurations, the gain $a$ and bias $b$ parameters adjust rapidly in the first 2,000 steps of BPTT before stabilizing and remaining virtually constant for the rest of the 10,000 training steps. This demonstrates that the model quickly finds a task-suitable operating point for the reservoir activations at the beginning of training, after which the scaling and shifting require no further significant updates.
+
 % ----------------------------------------------------------------
 
 % ============================================================
@@ -565,91 +603,37 @@ This comparison highlights that while unsupervised IP establishes a well-distrib
 % ============================================================
 \chapter{Discussion}
 % TARGET: ~4 pages
-The use of a RC class model was driven by the efficiency of the architecture both in terms of computational resources and limited dataset size, however it's also interesting the superior performance exhibited by RC models in chaotic time-series prediction, often superior to more established architectures such as Transformers\cite{vaswani2023attentionneed}. This is why the RC paradigm remains interesting even under the famous Bitter Lesson\cite{sutton2019bitterlesson} line of thinking, meaning that more scalable methods outperform hand-crafted alternatives.
+The improvements brought by the gradient training of the IP gain and bias terms, and even more so the lack thereof from unsupervised IP pre-training, seem to be related to the use of a gradient-trained and more complex readout, which does not need the IP adaptation to fully leverage the reservoir state. Therefore, the classic, offline IP mechanism falls short when applied to the AERC architecture, even though it remains highly relevant for traditional RC models with simple linear readouts.
 
-% ----------------------------------------------------------------
-% TODO (Chapter 5 continuation — ~3 pages):
-%
-% \section{Why Unsupervised IP Does Not Help Alone}
-%   - Hypothesis: the attention network already compensates for poorly
-%     distributed reservoir states by learning appropriate weights.
-%   - The attention gate ($\mathbf{W}_{net}$) is a trained neural
-%     network and can implicitly normalise or re-weight states; thus
-%     unsupervised IP's contribution is subsumed.
-%   - Contrast with classical RC where the readout is a \emph{fixed}
-%     linear layer trained via ridge regression — there, IP provides
-%     a meaningful initialisation benefit.
-%
-% \section{Why Gradient IP Does Help}
-%   - When $a$ and $b$ are updated by BPTT, they become task-adapted
-%     per-neuron scale and shift parameters — essentially a very
-%     lightweight form of learned feature normalisation.
-%   - The gain $a$ effectively adjusts how "active" each reservoir
-%     neuron is for the given character distribution in Shakespeare,
-%     letting the attention gate focus on the most discriminative
-%     neurons.
-%   - Parameter efficiency: +0.3\% parameters for +3\% validation loss
-%     improvement is a strong trade-off; compare to the cost of adding
-%     a full attention head.
-%
-% \section{Effect of RMSNorm}
-%   - Discuss the interaction between RMSNorm and IP: if RMSNorm and
-%     gradient IP both improve performance independently, are their
-%     gains additive?  Is one a better choice for efficiency?
-%   - Practical recommendation: gradient IP + no RMSNorm vs.\
-%     RMSNorm + no IP.
-%
-% \section{Limitations and Threats to Validity}
-%   - Small dataset and small model: results may not generalise to
-%     larger language models or different corpora.
-%   - Single random seed: variance in results is not quantified.
-%     Recommend repeating with multiple seeds.
-%   - Character-level task: conclusions may differ for token-level
-%     (subword) language modelling.
-%   - Spectral radius was fixed at 0.98 in the grid search; a wider
-%     sweep including smaller values (0.9, 0.95) may reveal different
-%     optimal IP configurations.
-%
-% \section{Broader Significance}
-%   - Physical reservoir implementations (photonic, memristive) cannot
-%     be backpropagated through; unsupervised IP pre-training is
-%     therefore still valuable in that context even if it does not help
-%     in software simulations.
-%   - Gradient IP can be seen as a meta-learning step that adapts the
-%     reservoir's effective operating point to a specific data
-%     distribution before the attention head is trained.
-% ----------------------------------------------------------------
+Conversely, the disproportionate performance gain from gradient training the IP terms, well beyond what would typically be expected from adding a mere $0.2\%$ more trainable parameters, indicates that the reservoir states benefit significantly from being adaptively regularized during backpropagation. This regularization is not, however, equivalent to a static normalization constraint like RMSNorm, but rather a dynamic, sequence-level adaptation of the reservoir's operating range. By tuning the gain and bias of individual neurons, the optimization prevents activation saturation and ensures that the attention gate receives more informative features throughout training.
+It is clear from the experiments presented in Chapter 4 that BPTT is crucial for the correct optimization of the gains and biases, although it is also evident that the optimal operating range is found rapidly (as shown in Figure~\ref{fig:five-way}).
+
+\paragraph{Efficiency vs Expressiveness tradeoff.} Because the model intentionally trades peak expressiveness for extreme computational efficiency and has a mathematically bounded memory capacity, it is not fit for modeling long-form conversations. We instead propose it as a quick, efficient model for short term applications, potentially useful as a subagent for short action sequences or fast response times.
+The use of an RC-class model in this thesis was driven by the architecture's efficiency in terms of both computational resources and dataset size. However, the superior performance historically exhibited by RC models in chaotic time-series prediction—often exceeding that of more established architectures such as Transformers~\cite{vaswani2023attentionneed}—suggests that reservoir dynamics possess unique representational properties. This makes the RC paradigm highly interesting even under the lens of the ``Bitter Lesson''~\cite{sutton2019bitterlesson}, which posits that general, scalable methods eventually outperform hand-crafted alternatives. Rather than manually engineering features, the reservoir provides a high-dimensional, untrained temporal expansion that acts as a cheap foundation for learning. However, it still lacks the global, uncompressed context window of the Transformer, which can access the entire history simultaneously at each step. By performing pairwise comparisons across the entire sequence, Transformers achieve superior modeling capabilities, whereas the recurrent reservoir acts as a lossy temporal bottleneck, trading peak expressive capacity for sub-quadratic computational cost.
+
+\paragraph{Broader significance and physical reservoirs.}
+It is particularly interesting to consider the potential adaptation of gradient-based IP training for physical reservoir implementations. Although a physical substrate (such as photonic hardware) cannot be backpropagated through directly and cannot easily adapt its internal connections to inputs, our implementation does not depend on altering the reservoir's internal weights, but rather on scales and shifts applied to its outputs. In this sense, our method can be viewed as a meta-learning step that adapts the reservoir's output to reside within an effective manifold that is easily operated on by the subsequent attention layer.
+
+\paragraph{Limitations.} There are several limitations that should be considered when evaluating the findings of this thesis:
+\begin{itemize}
+  \item \textbf{Scale of Model and Dataset:} Both the reservoir size and the dataset are relatively small. This constraint was necessitated by hardware limitations and our objective to evaluate a broad variety of architectural modifications. Consequently, we cannot guarantee that these results will generalize to much larger models or longer training runs.
+  \item \textbf{Single Random Seed:} The experiments were conducted using a single random seed to ensure exact reproducibility across model variants. However, this prevents us from quantifying the statistical variance of the validation improvements.
+  \item \textbf{Character-Level Modeling:} We utilized character-level prediction for computational efficiency, resulting in a small vocabulary size ($V \in \{59, 65\}$). Standard token-level language modeling tasks typically involve vocabularies that are orders of magnitude larger, meaning the scope of our results may differ under subword tokenization.
+  \item \textbf{Hyperparameter Sweep:} The grid search over target parameters was constrained by hardware resources. It is possible that the search was caught in local minima, and a more extensive sweep is required to fully optimize the target distribution parameters.
+\end{itemize}
 
 % ============================================================
 % CHAPTER 6 — CONCLUSION  (~2 pages)
 % ============================================================
 \chapter{Conclusion}
-% TARGET: ~2 pages
-Text for the conclusion.
+We successfully reproduced the Attention-Enhanced Reservoir Computing paper, implemented the Intrinsic Plasticity mechanism as a pre-training unsupervised method showing no improvements over the standard AERC architecture. We then added gradient-based optimization using backpropagation-through-time, obtaining significant improvements with a marginal increase in parameter count. We also tested RMSNorm against the IP mechanism as a form of normalization, finding it redundant in both IP and non-IP models.
+In the end, the addition of gradient-based IP gain $a$ and bias $b$ terms has resulted in a $\sim 2.4\%$ validation loss improvement with a small $0.2\%$ increase in parameter count.
 
-% ----------------------------------------------------------------
-% TODO (Chapter 6 — ~2 pages):
-%
-% \section*{Summary of Contributions}  (no number, or numbered as 6.1)
-%   Briefly restate (one short paragraph each):
-%   1. Replication of the AERC baseline.
-%   2. Integration of unsupervised IP (no significant improvement).
-%   3. Gradient-based IP fine-tuning (+3\% val loss, +0.3\% params).
-%   4. Four-way RMSNorm ablation.
-%   5. Hyperparameter grid search identifying $\sigma=0.3$, $\mu=-0.1$
-%      as best IP target distribution.
-%
-% \section*{Future Work}
-%   - Scale experiments to larger reservoirs ($N > 500$) and compare
-%     with deeper attention networks.
-%   - Evaluate on token-level (BPE) corpora such as WikiText-2.
-%   - Test IP with physical (photonic) reservoirs where only
-%     unsupervised adaptation is feasible.
-%   - Combine gradient IP with other RC enhancements (leaky neurons,
-%     deep RC) in the AERC framework.
-%   - Investigate whether the IP distribution target ($\mu$, $\sigma$)
-%     can be learned end-to-end via a meta-learning objective.
-% ----------------------------------------------------------------
+\subsection*{Future Work}
+There are various promising directions of research worth exploring.
+\paragraph{Scale.} While this thesis was limited in computational resources, the model should be tested at different scales. Specifically, the dimension of the reservoir should be increased significantly to better study and understand the internal dynamics and its emergent properties. Similarly, the model should be tested on token-level tasks using standard datasets.
+\paragraph{Efficiency.} The updates to IP gain $a$ and bias $b$ during gradient-based training quickly converge to zero, resulting in most of the BPTT computation being redundant. For this reason, this phenomenon should be studied in greater depth, as it may be possible to achieve the same performance with significantly fewer computational resources.
+\paragraph{Reservoir enhancements.} Because the objective of this thesis was not to maximize the final performance of the model, we did not implement many widely tested enhancements for the reservoir, such as leaky integrator neurons, a feedback mechanism, or reservoir weight pre-training. These enhancements are certain to bring improvements while maintaining the reservoir's efficiency.
 
 % --- Back Matter (Bibliography) ---
 \backmatter
