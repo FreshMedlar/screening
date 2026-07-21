@@ -1,13 +1,4 @@
 #!/usr/bin/env python3
-"""
-Training and comparison script for:
-1. AERC Base (without IP)
-2. AERC with Intrinsic Plasticity (IP), with IP parameters frozen during BPTT
-
-Instantiates both models with identical initial weights, runs IP pre-training on the IP model,
-freezes the IP gain (ip_a) and bias (ip_b) parameters, and then trains both models end-to-end
-via backpropagation through time (BPTT) for only the attention and readout heads.
-"""
 
 import os
 import sys

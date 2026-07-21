@@ -2,8 +2,6 @@
 """
 Training and comparison script for AERC Base vs AERC with Intrinsic Plasticity (IP).
 
-Instantiates both models with identical initial weights, runs IP pre-training on the IP model,
-trains both models end-to-end via backpropagation, and plots a comparative performance graph.
 """
 
 import os
